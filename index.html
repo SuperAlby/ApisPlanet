@@ -90,6 +90,13 @@
     .table th { color: var(--muted); font-weight: 600; font-size: 12px; }
 
     .search { display:flex; gap:8px; }
+
+    /* Frames (favi) */
+    .frames-legend { color: var(--muted); font-size: 12px; }
+    .frames-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; margin-top: 8px; }
+    .frame-cell { border: 1px solid var(--border); border-radius: 10px; padding: 8px; background: #0a1220; }
+    .frame-cell label { display:block; font-size: 11px; color: var(--muted); margin-bottom: 6px; }
+    .frames-toolbar { display:flex; gap:8px; margin-top:8px; flex-wrap: wrap; }
   </style>
 </head>
 <body>
@@ -196,11 +203,20 @@
             <textarea id="hiveNotes" placeholder="Appunti sull'arnia…"></textarea>
           </div>
           <div class="flex" style="margin-top:12px;">
-            <button class="btn primary" id="btnSaveHive">Salva arnia</button>
-            <button class="btn warn" id="btnDeleteHive">Elimina arnia</button>
-          </div>
+              <button class="btn primary" id="btnSaveHive">Salva arnia</button>
+              <button class="btn warn" id="btnDeleteHive">Elimina arnia</button>
+            </div>
 
-          <div class="divider"></div>
+            <div class="divider"></div>
+
+            <div class="section-title"><h3>Disposizione favi (1–10)</h3><span class="frames-legend">Seleziona il tipo per ciascun favo</span></div>
+            <div id="framesGrid" class="frames-grid"></div>
+            <div class="frames-toolbar">
+              <button class="btn" id="btnPresetFrames">Preset classico</button>
+              <button class="btn ghost" id="btnAllEmpty">Tutti vuoti</button>
+            </div>
+
+            <div class="divider"></div>
 
           <div class="section-title"><h3>Ispezioni</h3><button class="btn" id="btnAddInspection">+ Aggiungi</button></div>
           <table class="table" id="inspectionsTable"></table>
@@ -382,11 +398,29 @@
     }
 
     // --- Hive editor ---
+    const FRAME_TYPES = [
+      { value: 'vuoto', label: 'Vuoto' },
+      { value: 'foglio', label: 'Foglio cereo' },
+      { value: 'costruito', label: 'Favo costruito' },
+      { value: 'covata_aperta', label: 'Covata aperta' },
+      { value: 'covata_operculata', label: 'Covata opercolata' },
+      { value: 'miele', label: 'Miele' },
+      { value: 'polline', label: 'Polline' },
+      { value: 'diaframma', label: 'Diaframma' }
+    ];
+
+    function ensureFrames(h) {
+      if (!h.frames || !Array.isArray(h.frames) || h.frames.length !== 10) {
+        h.frames = Array.from({length:10}, () => 'vuoto');
+      }
+    }
+
     function renderHiveEditor() {
       const h = getHive();
       const editor = byId('hiveEditor');
       if (!h) { editor.style.display = 'none'; return; }
       editor.style.display = 'block';
+      ensureFrames(h);
       byId('hiveTitle').textContent = `Arnia: ${h.name || ''}`;
       byId('hiveName').value = h.name || '';
       byId('queenStatus').value = h.queenStatus || 'sconosciuto';
@@ -394,9 +428,36 @@
       byId('supers').value = h.supers ?? 0;
       byId('hiveNotes').value = h.notes || '';
 
-      // tables
+      renderFrames();
       renderInspections();
       renderHarvests();
+    }
+
+    function renderFrames() {
+      const h = getHive(); if (!h) return; ensureFrames(h);
+      const grid = byId('framesGrid'); if (!grid) return; grid.innerHTML = '';
+      h.frames.forEach((val, i) => {
+        const cell = document.createElement('div');
+        cell.className = 'frame-cell';
+        const lab = document.createElement('label');
+        lab.textContent = `Favo ${i+1}`;
+        const sel = document.createElement('select');
+        sel.id = `frame_${i}`;
+        FRAME_TYPES.forEach(t => {
+          const opt = document.createElement('option');
+          opt.value = t.value; opt.textContent = t.label; if (t.value === val) opt.selected = true; sel.appendChild(opt);
+        });
+        sel.onchange = () => { h.frames[i] = sel.value; saveData(state.data); };
+        cell.appendChild(lab); cell.appendChild(sel); grid.appendChild(cell);
+      });
+      const btnPreset = byId('btnPresetFrames'); if (btnPreset) btnPreset.onclick = () => {
+        const preset = ['miele','costruito','covata_operculata','covata_aperta','foglio','foglio','covata_aperta','covata_operculata','costruito','miele'];
+        for (let i=0;i<10;i++){ h.frames[i] = preset[i]; }
+        saveData(state.data); renderFrames();
+      };
+      const btnEmpty = byId('btnAllEmpty'); if (btnEmpty) btnEmpty.onclick = () => {
+        h.frames = Array.from({length:10}, ()=>'vuoto'); saveData(state.data); renderFrames();
+      };
     }
 
     function renderInspections() {
@@ -462,7 +523,7 @@
     byId('btnAddHive').onclick = async () => {
       const a = getApiary(); if (!a) return;
       const name = await promptDialog('Nome / codice arnia'); if (!name) return;
-      const h = { id: uid(), name, queenStatus: 'sconosciuto', strength: 3, supers: 0, notes: '', inspections: [], harvests: [] };
+      const h = { id: uid(), name, queenStatus: 'sconosciuto', strength: 3, supers: 0, notes: '', inspections: [], harvests: [], frames: Array.from({length:10}, ()=>'vuoto') };
       a.hives.push(h); saveData(state.data); renderHives(); state.selectedHiveId = h.id; renderHiveEditor(); notify('Arnia aggiunta');
     };
 
@@ -473,7 +534,12 @@
       h.strength = Number(byId('strength').value || 3);
       h.supers = Number(byId('supers').value || 0);
       h.notes = byId('hiveNotes').value.trim();
-      saveData(state.data); renderHives(); notify('Arnia salvata');
+      if (h.frames && Array.isArray(h.frames)) {
+        for (let i=0;i<10;i++) {
+          const sel = byId(`frame_${i}`); if (sel) h.frames[i] = sel.value;
+        }
+      }
+      saveData(state.data); renderHives(); renderFrames(); notify('Arnia salvata');
     };
 
     byId('btnDeleteHive').onclick = () => {
