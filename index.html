@@ -1,0 +1,540 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Gestione Apiari</title>
+  <style>
+    /* --- Reset minimo --- */
+    :root {
+      --bg: #0f172a;        /* slate-900 */
+      --panel: #111827;     /* gray-900 */
+      --muted: #94a3b8;     /* slate-400 */
+      --text: #e5e7eb;      /* gray-200 */
+      --accent: #22c55e;    /* green-500 */
+      --accent-2: #3b82f6;  /* blue-500 */
+      --danger: #ef4444;    /* red-500 */
+      --warn: #f59e0b;      /* amber-500 */
+      --card: #0b1220;
+      --border: #1f2937;    /* gray-800 */
+      --shadow: 0 10px 30px rgba(0,0,0,.35);
+      --radius: 16px;
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+      background: radial-gradient(1200px 800px at 80% -10%, rgba(59,130,246,.15), transparent 50%),
+                  radial-gradient(900px 600px at -10% 20%, rgba(34,197,94,.12), transparent 40%),
+                  var(--bg);
+      color: var(--text);
+    }
+    header {
+      position: sticky; top: 0; z-index: 9;
+      background: rgba(11,18,32,.75);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--border);
+    }
+    .container { max-width: 1100px; margin: 0 auto; padding: 16px; }
+    h1 { font-size: 20px; margin: 0; letter-spacing: .2px; display:flex; align-items:center; gap:12px; }
+    h1 span.badge { font-size: 12px; color: var(--bg); background: var(--accent); padding: 2px 8px; border-radius: 999px; }
+
+    /* Top bar */
+    .topbar { display: flex; align-items: center; gap: 12px; }
+    .grow { flex: 1; }
+
+    input, select, textarea { width: 100%; background: #0a1220; border: 1px solid var(--border); color: var(--text); padding: 10px 12px; border-radius: 12px; outline: none; }
+    textarea { min-height: 80px; resize: vertical; }
+    label { font-size: 12px; color: var(--muted); display: block; margin-bottom: 6px; }
+
+    .btn { appearance: none; border: 1px solid var(--border); background: linear-gradient(180deg, #0f1a2f, #0c1426); color: var(--text); padding: 10px 14px; border-radius: 12px; cursor: pointer; box-shadow: var(--shadow); transition: transform .04s ease, border-color .2s ease; }
+    .btn:hover { border-color: #2b3a57; }
+    .btn:active { transform: translateY(1px); }
+    .btn.primary { background: linear-gradient(180deg, #1f883d, #166534); border-color: #14532d; }
+    .btn.blue { background: linear-gradient(180deg, #1e3a8a, #1e40af); border-color: #1e3a8a; }
+    .btn.warn { background: linear-gradient(180deg, #a16207, #92400e); border-color: #78350f; }
+    .btn.ghost { background: transparent; border-color: var(--border); }
+
+    .toolbar { display: flex; flex-wrap: wrap; gap: 8px; }
+
+    .grid { display: grid; grid-template-columns: 280px 1fr; gap: 16px; }
+    @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } }
+
+    .card { background: linear-gradient(180deg, rgba(255,255,255,.02), transparent), var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; box-shadow: var(--shadow); }
+    .card h3 { margin-top: 0; }
+
+    .list { display: grid; gap: 10px; }
+    .item { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 10px; padding: 12px; border: 1px solid var(--border); border-radius: 12px; }
+    .item small { color: var(--muted); }
+
+    .row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    @media (max-width: 700px) { .row { grid-template-columns: 1fr; } }
+
+    .pill { padding: 2px 8px; border-radius: 999px; font-size: 12px; border: 1px solid var(--border); }
+    .pill.green { background: rgba(34,197,94,.15); border-color: rgba(34,197,94,.5); }
+    .pill.red { background: rgba(239,68,68,.15); border-color: rgba(239,68,68,.5); }
+    .pill.yellow { background: rgba(245,158,11,.15); border-color: rgba(245,158,11,.5); }
+
+    .muted { color: var(--muted); }
+    .flex { display: flex; gap: 8px; align-items: center; }
+
+    .section-title { display:flex; align-items:center; justify-content: space-between; gap:12px; }
+
+    .divider { height:1px; background: var(--border); margin: 12px 0; }
+
+    .footer { text-align:center; color: var(--muted); font-size: 12px; padding: 24px 0; }
+
+    .table { width: 100%; border-collapse: collapse; }
+    .table th, .table td { padding: 8px 10px; border-bottom: 1px solid var(--border); text-align: left; }
+    .table th { color: var(--muted); font-weight: 600; font-size: 12px; }
+
+    .search { display:flex; gap:8px; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container topbar">
+      <h1>🐝 Gestione Apiari <span class="badge">v0.1</span></h1>
+      <div class="grow"></div>
+      <div class="toolbar">
+        <button class="btn" id="btnExport" title="Esporta dati in JSON">Esporta</button>
+        <label class="btn ghost" for="fileImport" title="Importa dati da JSON">Importa <input id="fileImport" type="file" accept="application/json" hidden></label>
+        <button class="btn warn" id="btnReset" title="Azzera i dati locali">Azzera</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="container" style="padding-top: 20px;">
+    <div class="grid">
+      <!-- Colonna sinistra: Apiari -->
+      <section class="card" id="apiariesPanel">
+        <div class="section-title">
+          <h3>Apiari</h3>
+          <div class="search">
+            <input id="searchApiary" placeholder="Cerca per nome o luogo…" />
+            <button class="btn" id="btnNewApiary">+ Nuovo</button>
+          </div>
+        </div>
+        <div class="divider"></div>
+        <div id="apiaryList" class="list"></div>
+      </section>
+
+      <!-- Colonna destra: Dettaglio -->
+      <section class="card" id="detailPanel">
+        <div id="emptyState">
+          <h3>Benvenuto 👋</h3>
+          <p class="muted">Crea un apiario con “+ Nuovo” oppure selezionane uno per gestire arnie, ispezioni e raccolti. I dati restano nel tuo browser (LocalStorage). Ricorda di usare “Esporta” per avere un backup.</p>
+        </div>
+
+        <div id="apiaryEditor" style="display:none;">
+          <h3 id="apiaryTitle">Dettagli apiario</h3>
+          <div class="row">
+            <div>
+              <label>Nome</label>
+              <input id="apiaryName" placeholder="Es. Cascina Bosco" />
+            </div>
+            <div>
+              <label>Luogo</label>
+              <input id="apiaryLocation" placeholder="Comune / coordinate" />
+            </div>
+          </div>
+          <div style="margin-top:12px;">
+            <label>Note</label>
+            <textarea id="apiaryNotes" placeholder="Appunti generali sull'apiario…"></textarea>
+          </div>
+          <div class="flex" style="margin-top:12px;">
+            <button class="btn primary" id="btnSaveApiary">Salva</button>
+            <button class="btn" id="btnAddHive">+ Aggiungi arnia</button>
+            <button class="btn warn" id="btnDeleteApiary">Elimina apiario</button>
+          </div>
+
+          <div class="divider"></div>
+
+          <div class="section-title">
+            <h3>Arnie</h3>
+            <div class="search">
+              <input id="searchHive" placeholder="Cerca arnia…" />
+            </div>
+          </div>
+          <div id="hivesList" class="list" style="margin-top:8px;"></div>
+
+          <div id="hiveEditor" class="card" style="margin-top:16px; display:none;">
+            <h3 id="hiveTitle">Arnia</h3>
+            <div class="row">
+              <div>
+                <label>Nome / codice</label>
+                <input id="hiveName" placeholder="Es. A12" />
+              </div>
+              <div>
+                <label>Regina</label>
+                <select id="queenStatus">
+                  <option value="sconosciuto">Sconosciuto</option>
+                  <option value="presente">Presente</option>
+                  <option value="assenza">Assente</option>
+                  <option value="vergine">Vergine</option>
+                  <option value="sostituita">Sostituita</option>
+                </select>
+              </div>
+            </div>
+            <div class="row" style="margin-top:12px;">
+              <div>
+                <label>Forza colonia (1-5)</label>
+                <input id="strength" type="number" min="1" max="5" value="3" />
+              </div>
+              <div>
+                <label>Melari montati</label>
+                <input id="supers" type="number" min="0" value="0" />
+              </div>
+            </div>
+            <div style="margin-top:12px;">
+              <label>Note</label>
+              <textarea id="hiveNotes" placeholder="Appunti sull'arnia…"></textarea>
+            </div>
+            <div class="flex" style="margin-top:12px;">
+              <button class="btn primary" id="btnSaveHive">Salva arnia</button>
+              <button class="btn warn" id="btnDeleteHive">Elimina arnia</button>
+            </div>
+
+            <div class="divider"></div>
+
+            <div class="section-title"><h3>Ispezioni</h3><button class="btn" id="btnAddInspection">+ Aggiungi</button></div>
+            <table class="table" id="inspectionsTable"></table>
+
+            <div class="section-title" style="margin-top:16px;"><h3>Raccolti miele</h3><button class="btn" id="btnAddHarvest">+ Aggiungi</button></div>
+            <table class="table" id="harvestsTable"></table>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <p class="footer">Dati salvati localmente. Consigliato esportare periodicamente il backup JSON.</p>
+  </main>
+
+  <template id="tplApiaryItem">
+    <div class="item">
+      <div>
+        <div class="flex" style="gap:6px;">
+          <strong class="name"></strong>
+          <span class="pill" title="numero arnie"><span class="hivesCount">0</span> arnie</span>
+        </div>
+        <small class="muted location"></small>
+      </div>
+      <div class="flex">
+        <button class="btn" data-action="open">Apri</button>
+        <button class="btn warn" data-action="del">Elimina</button>
+      </div>
+    </div>
+  </template>
+
+  <template id="tplHiveItem">
+    <div class="item">
+      <div>
+        <div class="flex" style="gap:6px;">
+          <strong class="name"></strong>
+          <span class="pill status"></span>
+          <span class="pill" title="forza">F:<span class="strength"></span></span>
+          <span class="pill" title="melari">M:<span class="supers"></span></span>
+        </div>
+        <small class="muted updated"></small>
+      </div>
+      <div class="flex">
+        <button class="btn" data-action="open">Apri</button>
+        <button class="btn warn" data-action="del">Elimina</button>
+      </div>
+    </div>
+  </template>
+
+  <dialog id="dialogPrompt">
+    <form method="dialog" style="min-width:320px; background: var(--card); color: var(--text); border:1px solid var(--border); border-radius: 12px; padding:16px;">
+      <label id="dialogLabel"></label>
+      <input id="dialogInput" style="margin-top:8px;" />
+      <menu style="display:flex; gap:8px; justify-content:flex-end; margin-top:12px;">
+        <button class="btn ghost" value="cancel">Annulla</button>
+        <button class="btn primary" value="ok">OK</button>
+      </menu>
+    </form>
+  </dialog>
+
+  <script>
+    // --- Utility ---
+    const byId = id => document.getElementById(id);
+    const uid = () => Math.random().toString(36).slice(2,9);
+
+    const storeKey = 'apiariesData.v0';
+    const loadData = () => JSON.parse(localStorage.getItem(storeKey) || '[]');
+    const saveData = (d) => localStorage.setItem(storeKey, JSON.stringify(d));
+
+    const state = {
+      data: loadData(),
+      selectedApiaryId: null,
+      selectedHiveId: null,
+    };
+
+    function promptDialog(label, value='') {
+      return new Promise((resolve) => {
+        const dlg = byId('dialogPrompt');
+        byId('dialogLabel').textContent = label;
+        const input = byId('dialogInput');
+        input.value = value;
+        dlg.showModal();
+        dlg.addEventListener('close', () => {
+          resolve(dlg.returnValue === 'ok' ? input.value : null);
+        }, { once: true });
+      });
+    }
+
+    function notify(msg) {
+      const el = document.createElement('div');
+      el.textContent = msg;
+      el.style.position='fixed'; el.style.right='16px'; el.style.bottom='16px'; el.style.padding='10px 12px'; el.style.background='rgba(15,23,42,.9)'; el.style.color='white'; el.style.border='1px solid var(--border)'; el.style.borderRadius='10px'; el.style.boxShadow='var(--shadow)';
+      document.body.appendChild(el);
+      setTimeout(()=> el.remove(), 2200);
+    }
+
+    // --- Render Apiari ---
+    function renderApiaries() {
+      const list = byId('apiaryList');
+      list.innerHTML = '';
+      const q = byId('searchApiary').value.toLowerCase();
+      state.data
+        .filter(a => !q || a.name.toLowerCase().includes(q) || (a.location||'').toLowerCase().includes(q))
+        .forEach(a => {
+          const tpl = byId('tplApiaryItem').content.cloneNode(true);
+          tpl.querySelector('.name').textContent = a.name || 'Senza nome';
+          tpl.querySelector('.location').textContent = a.location || '';
+          tpl.querySelector('.hivesCount').textContent = (a.hives||[]).length;
+          const item = tpl.querySelector('.item');
+          item.querySelector('[data-action="open"]').onclick = () => openApiary(a.id);
+          item.querySelector('[data-action="del"]').onclick = async () => {
+            if (confirm('Eliminare questo apiario?')) {
+              state.data = state.data.filter(x => x.id !== a.id);
+              saveData(state.data); renderApiaries(); renderDetail();
+              notify('Apiario eliminato');
+            }
+          };
+          list.appendChild(item);
+        });
+    }
+
+    function openApiary(id) {
+      state.selectedApiaryId = id; state.selectedHiveId = null; renderDetail();
+    }
+
+    function getApiary() { return state.data.find(a => a.id === state.selectedApiaryId); }
+    function getHive() {
+      const a = getApiary();
+      return a ? (a.hives||[]).find(h => h.id === state.selectedHiveId) : null;
+    }
+
+    // --- Render Dettaglio Apiario ---
+    function renderDetail() {
+      const a = getApiary();
+      byId('emptyState').style.display = a ? 'none' : 'block';
+      byId('apiaryEditor').style.display = a ? 'block' : 'none';
+      if (!a) return;
+
+      byId('apiaryTitle').textContent = `Apiario: ${a.name || 'Senza nome'}`;
+      byId('apiaryName').value = a.name || '';
+      byId('apiaryLocation').value = a.location || '';
+      byId('apiaryNotes').value = a.notes || '';
+
+      renderHives();
+      renderHiveEditor();
+    }
+
+    // --- Hives list ---
+    function renderHives() {
+      const a = getApiary();
+      const q = byId('searchHive').value.toLowerCase();
+      const list = byId('hivesList'); list.innerHTML = '';
+      (a.hives||[])
+        .filter(h => !q || (h.name||'').toLowerCase().includes(q))
+        .forEach(h => {
+          const tpl = byId('tplHiveItem').content.cloneNode(true);
+          tpl.querySelector('.name').textContent = h.name || 'Arnia';
+          tpl.querySelector('.strength').textContent = h.strength ?? '-';
+          tpl.querySelector('.supers').textContent = h.supers ?? 0;
+          const st = tpl.querySelector('.status');
+          st.textContent = `Regina: ${h.queenStatus||'?'}`;
+          st.classList.add(h.queenStatus === 'presente' ? 'green' : h.queenStatus === 'assenza' ? 'red' : 'yellow');
+          const lastUpd = new Date(Math.max(
+            ...(h.inspections||[]).map(i => new Date(i.date).getTime()),
+            ...(h.harvests||[]).map(r => new Date(r.date).getTime()),
+            0
+          ));
+          tpl.querySelector('.updated').textContent = lastUpd.getTime() ? `Ultimo aggiornamento: ${lastUpd.toLocaleDateString()}` : 'Nessun aggiornamento';
+
+          const item = tpl.querySelector('.item');
+          item.querySelector('[data-action="open"]').onclick = () => { state.selectedHiveId = h.id; renderHiveEditor(); };
+          item.querySelector('[data-action="del"]').onclick = () => {
+            if (confirm('Eliminare questa arnia?')) {
+              a.hives = a.hives.filter(x => x.id !== h.id); saveData(state.data); renderHives(); renderHiveEditor();
+              notify('Arnia eliminata');
+            }
+          };
+          list.appendChild(item);
+        });
+    }
+
+    // --- Hive editor ---
+    function renderHiveEditor() {
+      const h = getHive();
+      const editor = byId('hiveEditor');
+      if (!h) { editor.style.display = 'none'; return; }
+      editor.style.display = 'block';
+      byId('hiveTitle').textContent = `Arnia: ${h.name || ''}`;
+      byId('hiveName').value = h.name || '';
+      byId('queenStatus').value = h.queenStatus || 'sconosciuto';
+      byId('strength').value = h.strength ?? 3;
+      byId('supers').value = h.supers ?? 0;
+      byId('hiveNotes').value = h.notes || '';
+
+      // tables
+      renderInspections();
+      renderHarvests();
+    }
+
+    function renderInspections() {
+      const h = getHive(); const table = byId('inspectionsTable');
+      const rows = [
+        `<tr><th>Data</th><th>Azioni</th><th>Alimentazione</th><th>Trattamenti</th><th>Note</th><th></th></tr>`
+      ];
+      (h.inspections||[]).sort((a,b)=> new Date(b.date)-new Date(a.date)).forEach((i, idx) => {
+        rows.push(`<tr>
+          <td>${new Date(i.date).toLocaleDateString()}</td>
+          <td>${escapeHtml(i.actions||'')}</td>
+          <td>${escapeHtml(i.feeding||'')}</td>
+          <td>${escapeHtml(i.treatments||'')}</td>
+          <td>${escapeHtml(i.notes||'')}</td>
+          <td><button class="btn warn" data-i="${idx}" data-act="delInspection">Elimina</button></td>
+        </tr>`);
+      });
+      table.innerHTML = rows.join('');
+      table.querySelectorAll('[data-act="delInspection"]').forEach(btn => btn.onclick = () => {
+        const i = +btn.dataset.i; h.inspections.splice(i,1); saveData(state.data); renderInspections(); notify('Ispezione eliminata');
+      });
+    }
+
+    function renderHarvests() {
+      const h = getHive(); const table = byId('harvestsTable');
+      const rows = [
+        `<tr><th>Data</th><th>Kg miele</th><th>Note</th><th></th></tr>`
+      ];
+      (h.harvests||[]).sort((a,b)=> new Date(b.date)-new Date(a.date)).forEach((r, idx) => {
+        rows.push(`<tr>
+          <td>${new Date(r.date).toLocaleDateString()}</td>
+          <td>${Number(r.kg||0)}</td>
+          <td>${escapeHtml(r.notes||'')}</td>
+          <td><button class="btn warn" data-i="${idx}" data-act="delHarvest">Elimina</button></td>
+        </tr>`);
+      });
+      table.innerHTML = rows.join('');
+      table.querySelectorAll('[data-act="delHarvest"]').forEach(btn => btn.onclick = () => {
+        const i = +btn.dataset.i; h.harvests.splice(i,1); saveData(state.data); renderHarvests(); notify('Raccolto eliminato');
+      });
+    }
+
+    // --- Actions ---
+    byId('btnNewApiary').onclick = async () => {
+      const name = await promptDialog('Nome del nuovo apiario'); if (!name) return;
+      const a = { id: uid(), name, location: '', notes: '', hives: [] };
+      state.data.push(a); saveData(state.data); renderApiaries(); openApiary(a.id); notify('Apiario creato');
+    };
+
+    byId('btnSaveApiary').onclick = () => {
+      const a = getApiary(); if (!a) return;
+      a.name = byId('apiaryName').value.trim();
+      a.location = byId('apiaryLocation').value.trim();
+      a.notes = byId('apiaryNotes').value.trim();
+      saveData(state.data); renderApiaries(); notify('Apiario salvato');
+    };
+
+    byId('btnDeleteApiary').onclick = () => {
+      const a = getApiary(); if (!a) return; if (!confirm('Eliminare questo apiario e tutte le arnie?')) return;
+      state.data = state.data.filter(x => x.id !== a.id); saveData(state.data); renderApiaries(); renderDetail(); notify('Apiario eliminato');
+    };
+
+    byId('btnAddHive').onclick = async () => {
+      const a = getApiary(); if (!a) return;
+      const name = await promptDialog('Nome / codice arnia'); if (!name) return;
+      const h = { id: uid(), name, queenStatus: 'sconosciuto', strength: 3, supers: 0, notes: '', inspections: [], harvests: [] };
+      a.hives.push(h); saveData(state.data); renderHives(); state.selectedHiveId = h.id; renderHiveEditor(); notify('Arnia aggiunta');
+    };
+
+    byId('btnSaveHive').onclick = () => {
+      const h = getHive(); if (!h) return;
+      h.name = byId('hiveName').value.trim();
+      h.queenStatus = byId('queenStatus').value;
+      h.strength = Number(byId('strength').value || 3);
+      h.supers = Number(byId('supers').value || 0);
+      h.notes = byId('hiveNotes').value.trim();
+      saveData(state.data); renderHives(); notify('Arnia salvata');
+    };
+
+    byId('btnDeleteHive').onclick = () => {
+      const a = getApiary(); const h = getHive(); if (!a || !h) return; if (!confirm('Eliminare questa arnia?')) return;
+      a.hives = a.hives.filter(x => x.id !== h.id); state.selectedHiveId = null; saveData(state.data); renderHives(); renderHiveEditor(); notify('Arnia eliminata');
+    };
+
+    byId('btnAddInspection').onclick = async () => {
+      const h = getHive(); if (!h) return;
+      const when = await promptDialog('Data ispezione (YYYY-MM-DD)', new Date().toISOString().slice(0,10)); if (!when) return;
+      const actions = await promptDialog('Azioni svolte (es. controllo covata, sostituzione telaini)') || '';
+      const feeding = await promptDialog('Alimentazione (es. sciroppo 1:1, candito)') || '';
+      const treatments = await promptDialog('Trattamenti (es. acido ossalico, timolo)') || '';
+      const notes = await promptDialog('Note / osservazioni') || '';
+      h.inspections = h.inspections || []; h.inspections.push({ date: when, actions, feeding, treatments, notes });
+      saveData(state.data); renderInspections(); renderHives(); notify('Ispezione aggiunta');
+    };
+
+    byId('btnAddHarvest').onclick = async () => {
+      const h = getHive(); if (!h) return;
+      const when = await promptDialog('Data raccolto (YYYY-MM-DD)', new Date().toISOString().slice(0,10)); if (!when) return;
+      const kgStr = await promptDialog('Kg di miele (numero, es. 12.5)', '0'); if (kgStr===null) return;
+      const notes = await promptDialog('Note raccolto') || '';
+      const kg = Number(kgStr.replace(',', '.')) || 0;
+      h.harvests = h.harvests || []; h.harvests.push({ date: when, kg, notes });
+      saveData(state.data); renderHarvests(); renderHives(); notify('Raccolto aggiunto');
+    };
+
+    // Filtri live
+    byId('searchApiary').oninput = renderApiaries;
+    byId('searchHive').oninput = renderHives;
+
+    // Export / Import / Reset
+    byId('btnExport').onclick = () => {
+      const blob = new Blob([JSON.stringify(state.data, null, 2)], { type: 'application/json' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `apiari-backup-${new Date().toISOString().slice(0,10)}.json`;
+      a.click();
+    };
+
+    byId('fileImport').onchange = (e) => {
+      const file = e.target.files[0]; if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        try {
+          const data = JSON.parse(reader.result);
+          if (!Array.isArray(data)) throw new Error('Formato non valido');
+          state.data = data; saveData(state.data); renderApiaries(); renderDetail(); notify('Dati importati');
+        } catch (err) { alert('Errore nell\'importazione: ' + err.message); }
+      };
+      reader.readAsText(file);
+    };
+
+    byId('btnReset').onclick = () => {
+      if (!confirm('Azzera tutti i dati salvati localmente?')) return;
+      localStorage.removeItem(storeKey);
+      state.data = []; state.selectedApiaryId = null; state.selectedHiveId = null;
+      renderApiaries(); renderDetail(); notify('Archivio azzerato');
+    };
+
+    // --- Helpers ---
+    function escapeHtml(s){ return (s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[c])); }
+
+    // Avvio
+    renderApiaries(); renderDetail();
+  </script>
+</body>
+</html>
