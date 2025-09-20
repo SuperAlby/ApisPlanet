@@ -701,13 +701,26 @@ function frameColor(t){ return FRAME_COLORS[t] || '#334155'; }
       h.strength = Number(byId('strength').value || 3);
       h.supers = Number(byId('supers').value || 0);
       h.notes = byId('hiveNotes').value.trim();
+
+      // aggiorna anche i favi se presenti
       if (h.frames && Array.isArray(h.frames)) {
         for (let i=0;i<10;i++) {
           const sel = byId(`frame_${i}`); if (sel) h.frames[i] = sel.value;
         }
       }
-      saveData(state.data); renderHives(); renderFrames(); notify('Arnia salvata');
+
+      // salva (LocalStorage + eventuale cloud, se hai attivato la funzione cloudSave)
+      saveData(state.data);
+
+      // feedback e ritorno alla vista minima (solo lista arnie)
+      notify('Arnia salvata');
+      state.selectedHiveId = null;        // <-- chiudi l'editor
+      renderHives();                      // aggiorna la lista
+      renderHiveEditor();                 // nasconde l’editor perché non c’è arnia selezionata
+      const list = document.getElementById('hivesList');
+      if (list) list.scrollIntoView({ behavior: 'smooth', block: 'start' });
     };
+
 
     byId('btnDeleteHive').onclick = () => {
       const a = getApiary(); const h = getHive(); if (!a || !h) return; if (!confirm('Eliminare questa arnia?')) return;
@@ -771,8 +784,22 @@ function frameColor(t){ return FRAME_COLORS[t] || '#334155'; }
     // --- Helpers ---
     function escapeHtml(s){ return (s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[c])); }
 
-    // Avvio
-    renderApiaries(); renderDetail();
+    // Avvio con priorità al cloud
+    (async function init(){
+      try {
+        if (CLOUD.gistId && CLOUD.token) {
+          await cloudLoad();      // prova a caricare dal cloud
+          notify("Dati caricati dal cloud");
+        }
+      } catch (e) {
+      // se fallisce, restano i dati del LocalStorage
+      console.warn(e);
+      notify("Cloud non disponibile, uso dati locali");
+      }
+      renderApiaries(); 
+      renderDetail();
+    })();
+
   </script>
 </body>
 </html>
