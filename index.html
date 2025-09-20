@@ -318,13 +318,63 @@
 
     const storeKey = 'apiariesData.v0';
     const loadData = () => JSON.parse(localStorage.getItem(storeKey) || '[]');
-    const saveData = (d) => localStorage.setItem(storeKey, JSON.stringify(d));
+    // debounce semplice
+    function debounce(fn, ms){ let t; return (...args)=>{ clearTimeout(t); t=setTimeout(()=>fn(...args), ms); }; }
+    const scheduleCloudSave = debounce(() => cloudSave().catch(()=>{}), 800);
+
+    // Sostituisce la funzione esistente:
+    const saveData = (d) => {
+      localStorage.setItem(storeKey, JSON.stringify(d));
+      // salva anche sul cloud (se configurato), con debounce
+      scheduleCloudSave();
+    };
+
 
     const state = {
       data: loadData(),
       selectedApiaryId: null,
       selectedHiveId: null,
     };
+
+    // ==== CONFIG CLOUD (Gist GitHub) ====
+    // Compila con i tuoi valori:
+    const CLOUD = {
+      gistId: "INSERISCI_ID_GIST",     // es. "a1b2c3d4e5f6..."
+      token:  "INSERISCI_TOKEN",       // token GitHub con scope: gist
+      filename: "apiari.json"
+    };
+
+    function ghHeaders() {
+      return {
+        "Authorization": `token ${CLOUD.token}`,
+        "Accept": "application/vnd.github+json",
+        "Content-Type": "application/json"
+      };
+    }
+
+    async function cloudLoad() {
+      if (!CLOUD.gistId || !CLOUD.token) throw new Error("Cloud non configurato");
+      const res = await fetch(`https://api.github.com/gists/${CLOUD.gistId}`, { headers: ghHeaders() });
+      if (!res.ok) throw new Error("Errore lettura Gist: " + res.status);
+      const gist = await res.json();
+      const file = gist.files?.[CLOUD.filename];
+      if (!file || !file.content) throw new Error("File non trovato nel Gist");
+      const data = JSON.parse(file.content);
+      if (!Array.isArray(data)) throw new Error("Formato JSON non valido");
+      state.data = data;
+      localStorage.setItem("apiariesData.v0", JSON.stringify(state.data));
+    }
+
+    async function cloudSave() {
+      if (!CLOUD.gistId || !CLOUD.token) return; // se non configurato, ignora
+      const body = { files: { [CLOUD.filename]: { content: JSON.stringify(state.data, null, 2) } } };
+      const res = await fetch(`https://api.github.com/gists/${CLOUD.gistId}`, {
+        method: "PATCH",
+        headers: ghHeaders(),
+        body: JSON.stringify(body)
+      });
+      if (!res.ok) throw new Error("Errore salvataggio Gist: " + res.status);
+    }
 
     let dragFromIndex = null;
 
