@@ -97,6 +97,28 @@
     .frame-cell { border: 1px solid var(--border); border-radius: 10px; padding: 8px; background: #0a1220; }
     .frame-cell label { display:block; font-size: 11px; color: var(--muted); margin-bottom: 6px; }
     .frames-toolbar { display:flex; gap:8px; margin-top:8px; flex-wrap: wrap; }
+
+    /* Mini schema favi (lista arnie) */
+.frames-mini {
+  display: grid;
+  grid-template-columns: repeat(10, 1fr);
+  gap: 2px;
+  margin-top: 6px;
+}
+.frame-mini {
+  height: 8px;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+}
+
+/* Drag & drop feedback */
+.frame-cell.dragover {
+  border-color: var(--accent-2);
+  box-shadow: 0 0 0 2px rgba(59,130,246,.35) inset;
+}
+.frame-cell { cursor: grab; }
+.frame-cell:active { cursor: grabbing; }
+
   </style>
 </head>
 <body>
@@ -256,6 +278,7 @@
           <span class="pill" title="melari">M:<span class="supers"></span></span>
         </div>
         <small class="muted updated"></small>
+        <div class="frames-mini" title="Schema favi"></div>
       </div>
       <div class="flex">
         <button class="btn" data-action="open">Apri</button>
@@ -289,6 +312,8 @@
       selectedApiaryId: null,
       selectedHiveId: null,
     };
+
+    let dragFromIndex = null;
 
     function promptDialog(label, value='') {
       return new Promise((resolve) => {
@@ -385,6 +410,21 @@
           ));
           tpl.querySelector('.updated').textContent = lastUpd.getTime() ? `Ultimo aggiornamento: ${lastUpd.toLocaleDateString()}` : 'Nessun aggiornamento';
 
+          // Mini schema favi
+          try { ensureFrames(h); } catch(e){}
+            const mini = tpl.querySelector('.frames-mini');
+              if (mini) {
+                mini.innerHTML = '';
+                (h.frames || Array.from({length:10}, ()=>'vuoto')).forEach((ft, idx) => {
+                const span = document.createElement('div');
+                span.className = 'frame-mini';
+                span.title = `Favo ${idx+1}: ${ft}`;
+                span.style.background = frameColor(ft);
+                mini.appendChild(span);
+              });
+          }
+
+
           const item = tpl.querySelector('.item');
           item.querySelector('[data-action="open"]').onclick = () => { state.selectedHiveId = h.id; renderHiveEditor(); };
           item.querySelector('[data-action="del"]').onclick = () => {
@@ -408,6 +448,20 @@
       { value: 'polline', label: 'Polline' },
       { value: 'diaframma', label: 'Diaframma' }
     ];
+
+    const FRAME_COLORS = {
+      vuoto: '#111827',
+      foglio: '#2563eb',
+      costruito: '#10b981',
+      covata_aperta: '#f59e0b',
+      covata_operculata: '#d97706',
+     miele: '#eab308',
+     polline: '#a855f7',
+     diaframma: '#64748b'
+    };
+
+function frameColor(t){ return FRAME_COLORS[t] || '#334155'; }
+
 
     function ensureFrames(h) {
       if (!h.frames || !Array.isArray(h.frames) || h.frames.length !== 10) {
@@ -434,31 +488,81 @@
     }
 
     function renderFrames() {
-      const h = getHive(); if (!h) return; ensureFrames(h);
-      const grid = byId('framesGrid'); if (!grid) return; grid.innerHTML = '';
-      h.frames.forEach((val, i) => {
-        const cell = document.createElement('div');
-        cell.className = 'frame-cell';
-        const lab = document.createElement('label');
-        lab.textContent = `Favo ${i+1}`;
-        const sel = document.createElement('select');
-        sel.id = `frame_${i}`;
-        FRAME_TYPES.forEach(t => {
-          const opt = document.createElement('option');
-          opt.value = t.value; opt.textContent = t.label; if (t.value === val) opt.selected = true; sel.appendChild(opt);
-        });
-        sel.onchange = () => { h.frames[i] = sel.value; saveData(state.data); };
-        cell.appendChild(lab); cell.appendChild(sel); grid.appendChild(cell);
-      });
-      const btnPreset = byId('btnPresetFrames'); if (btnPreset) btnPreset.onclick = () => {
-        const preset = ['miele','costruito','covata_operculata','covata_aperta','foglio','foglio','covata_aperta','covata_operculata','costruito','miele'];
-        for (let i=0;i<10;i++){ h.frames[i] = preset[i]; }
-        saveData(state.data); renderFrames();
-      };
-      const btnEmpty = byId('btnAllEmpty'); if (btnEmpty) btnEmpty.onclick = () => {
-        h.frames = Array.from({length:10}, ()=>'vuoto'); saveData(state.data); renderFrames();
-      };
-    }
+  const h = getHive(); if (!h) return; ensureFrames(h);
+  const grid = byId('framesGrid'); if (!grid) return; grid.innerHTML = '';
+
+  h.frames.forEach((val, i) => {
+    const cell = document.createElement('div');
+    cell.className = 'frame-cell';
+    cell.draggable = true;
+    cell.dataset.index = i;
+
+    const lab = document.createElement('label');
+    lab.textContent = `Favo ${i+1}`;
+
+    const sel = document.createElement('select');
+    sel.id = `frame_${i}`;
+    FRAME_TYPES.forEach(t => {
+      const opt = document.createElement('option');
+      opt.value = t.value;
+      opt.textContent = t.label;
+      if (t.value === val) opt.selected = true;
+      sel.appendChild(opt);
+    });
+    sel.onchange = () => {
+      h.frames[i] = sel.value;
+      saveData(state.data);
+      renderHives();
+    };
+
+    // Drag & drop
+    cell.addEventListener('dragstart', (e) => {
+      dragFromIndex = i;
+      e.dataTransfer.setData('text/plain', String(i));
+    });
+    cell.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      cell.classList.add('dragover');
+    });
+    cell.addEventListener('dragleave', () => cell.classList.remove('dragover'));
+    cell.addEventListener('drop', (e) => {
+      e.preventDefault();
+      cell.classList.remove('dragover');
+      const from = dragFromIndex;
+      const to = i;
+      if (from === null || from === to) return;
+      const tmp = h.frames[from];
+      h.frames[from] = h.frames[to];
+      h.frames[to] = tmp;
+      saveData(state.data);
+      renderFrames();
+      renderHives();
+      dragFromIndex = null;
+    });
+
+    cell.appendChild(lab);
+    cell.appendChild(sel);
+    grid.appendChild(cell);
+  });
+
+  const btnPreset = byId('btnPresetFrames');
+  if (btnPreset) btnPreset.onclick = () => {
+    const preset = ['miele','costruito','covata_operculata','covata_aperta','foglio','foglio','covata_aperta','covata_operculata','costruito','miele'];
+    for (let i=0;i<10;i++){ h.frames[i] = preset[i]; }
+    saveData(state.data);
+    renderFrames();
+    renderHives();
+  };
+
+  const btnEmpty = byId('btnAllEmpty');
+  if (btnEmpty) btnEmpty.onclick = () => {
+    h.frames = Array.from({length:10}, ()=>'vuoto');
+    saveData(state.data);
+    renderFrames();
+    renderHives();
+  };
+}
+
 
     function renderInspections() {
       const h = getHive(); const table = byId('inspectionsTable');
