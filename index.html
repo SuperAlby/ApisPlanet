@@ -93,14 +93,7 @@
 
     /* Frames (favi) */
     .frames-legend { color: var(--muted); font-size: 12px; }
-    .frames-grid {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr); /* due colonne */
-      grid-template-rows: repeat(5, auto);  /* cinque righe */
-      gap: 12px;
-      margin-top: 8px;
-    }
-
+    .frames-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; margin-top: 8px; }
     .frame-cell { border: 1px solid var(--border); border-radius: 10px; padding: 8px; background: #0a1220; }
     .frame-cell label { display:block; font-size: 11px; color: var(--muted); margin-bottom: 6px; }
     .frames-toolbar { display:flex; gap:8px; margin-top:8px; flex-wrap: wrap; }
@@ -116,7 +109,7 @@
   margin-top: 6px;
 }
 .frame-mini {
-  height: 8px;
+  height: 32px;
   border-radius: 4px;
   border: 1px solid var(--border);
 }
