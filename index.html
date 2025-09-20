@@ -57,8 +57,9 @@
 
     .toolbar { display: flex; flex-wrap: wrap; gap: 8px; }
 
-    .grid { display: grid; grid-template-columns: 280px 1fr; gap: 16px; }
-    @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } }
+    .grid { display: grid; grid-template-columns: 280px 1fr 1fr; gap: 16px; }
+    @media (max-width: 1200px) { .grid { grid-template-columns: 280px 1fr; } }
+    @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } } }
 
     .card { background: linear-gradient(180deg, rgba(255,255,255,.02), transparent), var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; box-shadow: var(--shadow); }
     .card h3 { margin-top: 0; }
@@ -149,60 +150,63 @@
           </div>
 
           <div class="divider"></div>
+        </div>
+      </section>
 
-          <div class="section-title">
-            <h3>Arnie</h3>
-            <div class="search">
-              <input id="searchHive" placeholder="Cerca arnia…" />
+      <!-- Colonna destra: Arnie -->
+      <section class="card" id="hivesPanel" style="display:none;">
+        <div class="section-title">
+          <h3>Arnie</h3>
+          <div class="search">
+            <input id="searchHive" placeholder="Cerca arnia…" />
+          </div>
+        </div>
+        <div id="hivesList" class="list" style="margin-top:8px;"></div>
+
+        <div id="hiveEditor" class="card" style="margin-top:16px; display:none;">
+          <h3 id="hiveTitle">Arnia</h3>
+          <div class="row">
+            <div>
+              <label>Nome / codice</label>
+              <input id="hiveName" placeholder="Es. A12" />
+            </div>
+            <div>
+              <label>Regina</label>
+              <select id="queenStatus">
+                <option value="sconosciuto">Sconosciuto</option>
+                <option value="presente">Presente</option>
+                <option value="assenza">Assente</option>
+                <option value="vergine">Vergine</option>
+                <option value="sostituita">Sostituita</option>
+              </select>
             </div>
           </div>
-          <div id="hivesList" class="list" style="margin-top:8px;"></div>
-
-          <div id="hiveEditor" class="card" style="margin-top:16px; display:none;">
-            <h3 id="hiveTitle">Arnia</h3>
-            <div class="row">
-              <div>
-                <label>Nome / codice</label>
-                <input id="hiveName" placeholder="Es. A12" />
-              </div>
-              <div>
-                <label>Regina</label>
-                <select id="queenStatus">
-                  <option value="sconosciuto">Sconosciuto</option>
-                  <option value="presente">Presente</option>
-                  <option value="assenza">Assente</option>
-                  <option value="vergine">Vergine</option>
-                  <option value="sostituita">Sostituita</option>
-                </select>
-              </div>
+          <div class="row" style="margin-top:12px;">
+            <div>
+              <label>Forza colonia (1-5)</label>
+              <input id="strength" type="number" min="1" max="5" value="3" />
             </div>
-            <div class="row" style="margin-top:12px;">
-              <div>
-                <label>Forza colonia (1-5)</label>
-                <input id="strength" type="number" min="1" max="5" value="3" />
-              </div>
-              <div>
-                <label>Melari montati</label>
-                <input id="supers" type="number" min="0" value="0" />
-              </div>
+            <div>
+              <label>Melari montati</label>
+              <input id="supers" type="number" min="0" value="0" />
             </div>
-            <div style="margin-top:12px;">
-              <label>Note</label>
-              <textarea id="hiveNotes" placeholder="Appunti sull'arnia…"></textarea>
-            </div>
-            <div class="flex" style="margin-top:12px;">
-              <button class="btn primary" id="btnSaveHive">Salva arnia</button>
-              <button class="btn warn" id="btnDeleteHive">Elimina arnia</button>
-            </div>
-
-            <div class="divider"></div>
-
-            <div class="section-title"><h3>Ispezioni</h3><button class="btn" id="btnAddInspection">+ Aggiungi</button></div>
-            <table class="table" id="inspectionsTable"></table>
-
-            <div class="section-title" style="margin-top:16px;"><h3>Raccolti miele</h3><button class="btn" id="btnAddHarvest">+ Aggiungi</button></div>
-            <table class="table" id="harvestsTable"></table>
           </div>
+          <div style="margin-top:12px;">
+            <label>Note</label>
+            <textarea id="hiveNotes" placeholder="Appunti sull'arnia…"></textarea>
+          </div>
+          <div class="flex" style="margin-top:12px;">
+            <button class="btn primary" id="btnSaveHive">Salva arnia</button>
+            <button class="btn warn" id="btnDeleteHive">Elimina arnia</button>
+          </div>
+
+          <div class="divider"></div>
+
+          <div class="section-title"><h3>Ispezioni</h3><button class="btn" id="btnAddInspection">+ Aggiungi</button></div>
+          <table class="table" id="inspectionsTable"></table>
+
+          <div class="section-title" style="margin-top:16px;"><h3>Raccolti miele</h3><button class="btn" id="btnAddHarvest">+ Aggiungi</button></div>
+          <table class="table" id="harvestsTable"></table>
         </div>
       </section>
     </div>
@@ -331,6 +335,7 @@
       const a = getApiary();
       byId('emptyState').style.display = a ? 'none' : 'block';
       byId('apiaryEditor').style.display = a ? 'block' : 'none';
+      byId('hivesPanel').style.display = a ? 'block' : 'none';
       if (!a) return;
 
       byId('apiaryTitle').textContent = `Apiario: ${a.name || 'Senza nome'}`;
