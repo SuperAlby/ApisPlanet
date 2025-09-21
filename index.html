@@ -1,39 +1,184 @@
 <!doctype html>
 <html lang="it">
 <head>
-<meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Gestione Apiari – Elenco</title>
-<style>
-  :root{--border:#1f2937;--card:#0b1220;--bg:#0f172a;--text:#e5e7eb;}
-  body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui, -apple-system, Segoe UI, Roboto, Arial}
-  header{padding:12px 16px;border-bottom:1px solid var(--border)}
-  .btn{padding:8px 12px;border:1px solid var(--border);background:#0f1a2f;color:var(--text);border-radius:8px}
-  #cloudStatus{padding:4px 8px;border:1px solid var(--border);border-radius:999px;font-size:12px;margin-left:8px}
-</style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Gestione Apiari – Elenco</title>
+  <style>
+    :root{
+      --bg:#0f172a; --panel:#111827; --muted:#94a3b8; --text:#e5e7eb;
+      --accent:#22c55e; --accent-2:#3b82f6; --danger:#ef4444; --warn:#f59e0b;
+      --card:#0b1220; --border:#1f2937; --radius:16px; --shadow:0 10px 30px rgba(0,0,0,.35);
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,Helvetica,Arial;
+      background: radial-gradient(1200px 800px at 80% -10%, rgba(59,130,246,.15), transparent 50%),
+                  radial-gradient(900px 600px at -10% 20%, rgba(34,197,94,.12), transparent 40%), var(--bg);
+      color:var(--text);
+    }
+    header{position:sticky;top:0;z-index:9;background:rgba(11,18,32,.75);backdrop-filter:blur(10px);border-bottom:1px solid var(--border)}
+    .container{max-width:1100px;margin:0 auto;padding:16px}
+    h1{font-size:20px;margin:0;display:flex;align-items:center;gap:12px}
+    .badge{font-size:12px;color:var(--bg);background:var(--accent);padding:2px 8px;border-radius:999px}
+    .toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+    .btn{appearance:none;border:1px solid var(--border);background:linear-gradient(180deg,#0f1a2f,#0c1426);color:var(--text);padding:10px 14px;border-radius:12px;cursor:pointer;box-shadow:var(--shadow)}
+    .btn.primary{background:linear-gradient(180deg,#1f883d,#166534);border-color:#14532d}
+    .btn.warn{background:linear-gradient(180deg,#a16207,#92400e);border-color:#78350f}
+    .btn.ghost{background:transparent}
+    .btn.blue{background:linear-gradient(180deg,#1e3a8a,#1e40af);border-color:#1e3a8a}
+    #cloudStatus{padding:6px 10px;border:1px solid var(--border);border-radius:999px;font-size:12px}
+    .grid{display:grid;grid-template-columns:320px 1fr;gap:16px}
+    @media (max-width:900px){ .grid{grid-template-columns:1fr} }
+    .card{background:linear-gradient(180deg,rgba(255,255,255,.02),transparent),var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow)}
+    .list{display:grid;gap:10px}
+    .item{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;padding:12px;border:1px solid var(--border);border-radius:12px}
+    .muted{color:var(--muted)}
+    .pill{padding:2px 8px;border-radius:999px;font-size:12px;border:1px solid var(--border)}
+    .flex{display:flex;gap:8px;align-items:center}
+    .row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    @media(max-width:700px){ .row{grid-template-columns:1fr} }
+    .search{display:flex;gap:8px}
+    input,textarea,select{width:100%;background:#0a1220;border:1px solid var(--border);color:var(--text);padding:10px 12px;border-radius:12px;outline:none}
+    .divider{height:1px;background:var(--border);margin:12px 0}
+    .frames-mini{display:grid;grid-template-columns:repeat(10,1fr);gap:2px;margin-top:6px}
+    .frame-mini{height:32px;border-radius:4px;border:1px solid var(--border)}
+    dialog::backdrop{background:rgba(0,0,0,.5)}
+    dialog{border:1px solid var(--border);border-radius:16px;background:var(--card);color:var(--text);padding:16px;max-width:520px}
+    .dlg-row{display:grid;grid-template-columns:1fr;gap:8px;margin:8px 0}
+    .dlg-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:8px}
+  </style>
 </head>
 <body>
-<header>
-  <button class="btn" id="btnSettings">Impostazioni Cloud</button>
-  <button class="btn" id="btnCloudLoad">Scarica</button>
-  <button class="btn" id="btnCloudSave">Salva</button>
-  <span id="cloudStatus">Cloud: non configurato</span>
-</header>
+  <header>
+    <div class="container" style="display:flex;align-items:center;gap:12px;">
+      <h1>🐝 Gestione Apiari <span class="badge">Elenco</span></h1>
+      <div style="flex:1"></div>
+      <span id="cloudStatus">Cloud: non configurato</span>
+      <div class="toolbar">
+        <button class="btn" id="btnSettings">Impostazioni Cloud</button>
+        <button class="btn blue" id="btnCloudLoad">Scarica</button>
+        <button class="btn primary" id="btnCloudSave">Salva</button>
+        <button class="btn" id="btnExport">Esporta</button>
+        <label class="btn ghost">Importa <input id="fileImport" type="file" accept="application/json" hidden></label>
+        <button class="btn warn" id="btnReset">Azzera</button>
+      </div>
+    </div>
+  </header>
 
-<dialog id="cloudSettings">
-  <h3>Impostazioni Cloud (Gist GitHub)</h3>
-  <label>ID Gist</label><input id="cfgGist"/><br/>
-  <label>Token</label><input id="cfgToken"/><br/>
-  <label>Nome file</label><input id="cfgFile" value="apiari.json"/><br/>
-  <menu>
-    <button onclick="clearSettings()" class="btn">Pulisci</button>
-    <button onclick="this.closest('dialog').close()" class="btn">Annulla</button>
-    <button onclick="saveSettings()" class="btn">Salva</button>
-  </menu>
-</dialog>
+  <main class="container" style="padding-top:20px;">
+    <div class="grid">
+      <section class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;">
+          <h3>Apiari</h3>
+          <div class="search">
+            <input id="searchApiary" placeholder="Cerca per nome o luogo…" />
+            <button class="btn" id="btnNewApiary">+ Nuovo</button>
+          </div>
+        </div>
+        <div class="divider"></div>
+        <div id="apiaryList" class="list"></div>
+      </section>
 
-<script>
-const state = { data: [] };
+      <section class="card">
+        <div id="emptyState">
+          <h3>Benvenuto 👋</h3>
+          <p class="muted">Crea un apiario con “+ Nuovo” oppure selezionane uno. I dati sono salvati nel tuo browser o (se configurato) sincronizzati su Gist.</p>
+        </div>
 
+        <div id="apiaryEditor" style="display:none;">
+          <h3 id="apiaryTitle">Dettagli apiario</h3>
+          <div class="row">
+            <div><label>Nome</label><input id="apiaryName" /></div>
+            <div><label>Luogo</label><input id="apiaryLocation" /></div>
+          </div>
+          <div style="margin-top:12px;"><label>Note</label><textarea id="apiaryNotes"></textarea></div>
+          <div class="flex" style="margin-top:12px;">
+            <button class="btn primary" id="btnSaveApiary">Salva</button>
+            <button class="btn" id="btnAddHive">+ Aggiungi arnia</button>
+            <button class="btn warn" id="btnDeleteApiary">Elimina apiario</button>
+          </div>
+          <div class="divider"></div>
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;">
+            <h3>Arnie</h3>
+            <div class="search"><input id="searchHive" placeholder="Cerca arnia…"/></div>
+          </div>
+          <div id="hivesList" class="list" style="margin-top:8px;"></div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <!-- Dialog impostazioni cloud -->
+  <dialog id="cloudSettings">
+    <h3>Impostazioni Cloud (Gist GitHub)</h3>
+    <div class="dlg-row">
+      <label>ID Gist (privato)</label>
+      <input id="cfgGist" placeholder="es. a1b2c3d4..." />
+    </div>
+    <div class="dlg-row">
+      <label>Token GitHub (scope: gist)</label>
+      <input id="cfgToken" placeholder="token..." />
+    </div>
+    <div class="dlg-row">
+      <label>Nome file nel Gist</label>
+      <input id="cfgFile" placeholder="apiari.json" />
+    </div>
+    <div class="dlg-actions">
+      <button class="btn ghost" onclick="clearSettings()">Pulisci</button>
+      <button class="btn" onclick="document.getElementById('cloudSettings').close()">Annulla</button>
+      <button class="btn primary" onclick="saveSettings()">Salva impostazioni</button>
+    </div>
+  </dialog>
+
+  <template id="tplApiaryItem">
+    <div class="item">
+      <div>
+        <div class="flex" style="gap:6px;">
+          <strong class="name"></strong>
+          <span class="pill"><span class="hivesCount">0</span> arnie</span>
+        </div>
+        <small class="muted location"></small>
+      </div>
+      <div class="flex">
+        <button class="btn" data-action="open">Apri</button>
+        <button class="btn warn" data-action="del">Elimina</button>
+      </div>
+    </div>
+  </template>
+
+  <template id="tplHiveItem">
+    <div class="item">
+      <div>
+        <div class="flex" style="gap:6px;">
+          <strong class="name"></strong>
+          <span class="pill status"></span>
+          <span class="pill">F:<span class="strength"></span></span>
+          <span class="pill">M:<span class="supers"></span></span>
+        </div>
+        <small class="muted updated"></small>
+        <div class="frames-mini" title="Schema favi"></div>
+      </div>
+      <div class="flex">
+        <button class="btn" data-action="open">Apri</button>
+        <button class="btn warn" data-action="del">Elimina</button>
+      </div>
+    </div>
+  </template>
+
+  <dialog id="dialogPrompt">
+    <form method="dialog" style="min-width:320px;background:var(--card);color:var(--text);border:1px solid var(--border);border-radius:12px;padding:16px;">
+      <label id="dialogLabel"></label>
+      <input id="dialogInput" style="margin-top:8px;" />
+      <menu style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px;">
+        <button class="btn ghost" value="cancel">Annulla</button>
+        <button class="btn primary" value="ok">OK</button>
+      </menu>
+    </form>
+  </dialog>
+
+  <script>
+    // 1) FIRST: define cloud (also defines storeKey)
+    
 // ====== CLOUD SYNC (Settings panel + status) ======
 const CLOUD_KEYS = { gistId: 'cloud.gistId', token: 'cloud.token', filename: 'cloud.filename' };
 const storeKey = 'apiariesData.v0';
@@ -116,13 +261,11 @@ function openSettings(){
       return;
     }
   }
-  const dlg = document.getElementById('cloudSettings');
-  // Original simple version; we'll patch this function below in the fallback build.
   const { gistId, token, filename } = getCloudConfig();
   try { dlg.querySelector('#cfgGist').value = gistId; } catch(e){}
   try { dlg.querySelector('#cfgToken').value = token; } catch(e){}
   try { dlg.querySelector('#cfgFile').value = filename; } catch(e){}
-  try { dlg.showModal(); } catch(e) { /* fallback */ openSettings(); return; }
+  try { dlg.showModal(); } catch(e) { openSettings(); return; }
 }
 function saveSettings(){
   const dlg = document.getElementById('cloudSettings');
@@ -131,9 +274,7 @@ function saveSettings(){
     gistId = dlg.querySelector('#cfgGist').value.trim();
     token  = dlg.querySelector('#cfgToken').value.trim();
     filename = (dlg.querySelector('#cfgFile').value.trim() || 'apiari.json');
-  } catch(e){
-    // ignore
-  }
+  } catch(e){}
   setCloudConfig({ gistId, token, filename });
   try { dlg.close(); } catch(e){}
   setStatus('Cloud: impostazioni salvate', null);
@@ -153,8 +294,111 @@ document.addEventListener('visibilitychange', () => {
   }
 });
 
-document.getElementById('btnSettings').onclick = openSettings;
-document.getElementById('btnCloudLoad').onclick = async () => { try{ await cloudLoad(); }catch(e){ alert(e.message); } };
-document.getElementById('btnCloudSave').onclick = async () => { try{ await cloudSave(); }catch(e){ alert(e.message); } };
-</script>
-</body></html>
+
+    // 2) THEN: helpers that use storeKey
+    const byId = id => document.getElementById(id);
+    const uid = () => Math.random().toString(36).slice(2,9);
+    const loadData = () => JSON.parse(localStorage.getItem(storeKey) || '[]');
+    const saveData = (d) => { localStorage.setItem(storeKey, JSON.stringify(d)); scheduleCloudSave(); };
+    const state = { data: loadData(), selectedApiaryId: null };
+
+    function notify(msg){ const el=document.createElement('div'); el.textContent=msg;
+      el.style.position='fixed'; el.style.right='16px'; el.style.bottom='16px'; el.style.padding='10px 12px';
+      el.style.background='rgba(15,23,42,.9)'; el.style.color='white'; el.style.border='1px solid var(--border)';
+      el.style.borderRadius='10px'; el.style.boxShadow='var(--shadow)'; document.body.appendChild(el); setTimeout(()=>el.remove(),2200); }
+    function promptDialog(label, value='') { return new Promise((resolve) => { const dlg = byId('dialogPrompt'); byId('dialogLabel').textContent = label;
+      const input=byId('dialogInput'); input.value=value; dlg.showModal(); dlg.addEventListener('close',()=> resolve(dlg.returnValue==='ok'? input.value : null), {once:true}); }); }
+
+    function getApiary(){ return state.data.find(a => a.id === state.selectedApiaryId); }
+    function ensureFrames(h){ if(!h.frames || h.frames.length!==10){ h.frames = Array.from({length:10}, ()=> 'vuoto'); } }
+    const FRAME_COLORS = { vuoto:'#111827', foglio:'#2563eb', costruito:'#10b981', covata_aperta:'#f59e0b', covata_operculata:'#d97706', miele:'#eab308', polline:'#a855f7', diaframma:'#64748b' };
+    function frameColor(t){ return FRAME_COLORS[t] || '#334155'; }
+
+    function renderApiaries(){
+      const list = byId('apiaryList'); list.innerHTML='';
+      const q = (byId('searchApiary').value||'').toLowerCase();
+      state.data.filter(a => !q || (a.name||'').toLowerCase().includes(q) || (a.location||'').toLowerCase().includes(q)).forEach(a => {
+        const tpl = byId('tplApiaryItem').content.cloneNode(true);
+        tpl.querySelector('.name').textContent = a.name || 'Senza nome';
+        tpl.querySelector('.location').textContent = a.location || '';
+        tpl.querySelector('.hivesCount').textContent = (a.hives||[]).length;
+        const item = tpl.querySelector('.item');
+        item.querySelector('[data-action="open"]').onclick = () => openApiary(a.id);
+        item.querySelector('[data-action="del"]').onclick = () => { if(!confirm('Eliminare questo apiario?')) return;
+          state.data = state.data.filter(x=>x.id!==a.id); saveData(state.data); renderApiaries(); renderDetail(); notify('Apiario eliminato'); };
+        list.appendChild(item);
+      });
+    }
+    function openApiary(id){ state.selectedApiaryId = id; renderDetail(); }
+    function renderHives(){
+      const a=getApiary(); const list=byId('hivesList'); list.innerHTML='';
+      const q = (byId('searchHive').value||'').toLowerCase();
+      (a.hives||[]).filter(h=> !q || (h.name||'').toLowerCase().includes(q)).forEach(h=>{
+        const tpl = byId('tplHiveItem').content.cloneNode(true);
+        tpl.querySelector('.name').textContent = h.name || 'Arnia';
+        tpl.querySelector('.strength').textContent = h.strength ?? '-';
+        tpl.querySelector('.supers').textContent = h.supers ?? 0;
+        const st = tpl.querySelector('.status'); st.textContent = `Regina: ${h.queenStatus||'?'}`;
+        const lastUpd = new Date(Math.max(...(h.inspections||[]).map(i=>+new Date(i.date)), ...(h.harvests||[]).map(r=>+new Date(r.date)), 0));
+        tpl.querySelector('.updated').textContent = lastUpd.getTime()? `Ultimo aggiornamento: ${lastUpd.toLocaleDateString()}` : 'Nessun aggiornamento';
+        ensureFrames(h);
+        const mini = tpl.querySelector('.frames-mini'); mini.innerHTML='';
+        (h.frames||[]).forEach((ft,idx)=>{ const span=document.createElement('div'); span.className='frame-mini'; span.title=`Favo ${idx+1}: ${ft}`; span.style.background=frameColor(ft); mini.appendChild(span); });
+        const item = tpl.querySelector('.item');
+        item.querySelector('[data-action="open"]').onclick = () => { location.href = `hive.html?apiary=${a.id}&hive=${h.id}`; };
+        item.querySelector('[data-action="del"]').onclick = () => { if(!confirm('Eliminare questa arnia?')) return;
+          a.hives = a.hives.filter(x=>x.id!==h.id); saveData(state.data); renderHives(); notify('Arnia eliminata'); };
+        list.appendChild(item);
+      });
+    }
+    function renderDetail(){
+      const a=getApiary();
+      byId('emptyState').style.display = a? 'none':'block';
+      byId('apiaryEditor').style.display = a? 'block':'none';
+      if(!a) return;
+      byId('apiaryTitle').textContent = `Apiario: ${a.name||'Senza nome'}`;
+      byId('apiaryName').value = a.name || '';
+      byId('apiaryLocation').value = a.location || '';
+      byId('apiaryNotes').value = a.notes || '';
+      renderHives();
+    }
+
+    // Actions
+    byId('btnNewApiary').onclick = async () => { const name = await promptDialog('Nome del nuovo apiario'); if(!name) return;
+      const a = { id: uid(), name, location:'', notes:'', hives:[] };
+      state.data.push(a); saveData(state.data); renderApiaries(); openApiary(a.id); notify('Apiario creato'); };
+    byId('btnSaveApiary').onclick = () => { const a=getApiary(); if(!a) return;
+      a.name = byId('apiaryName').value.trim(); a.location = byId('apiaryLocation').value.trim(); a.notes = byId('apiaryNotes').value.trim();
+      saveData(state.data); renderApiaries(); notify('Apiario salvato'); };
+    byId('btnDeleteApiary').onclick = () => { const a=getApiary(); if(!a) return; if(!confirm('Eliminare questo apiario e tutte le arnie?')) return;
+      state.data = state.data.filter(x=>x.id!==a.id); saveData(state.data); renderApiaries(); renderDetail(); notify('Apiario eliminato'); };
+    byId('btnAddHive').onclick = async () => { const a=getApiary(); if(!a) return; const name = await promptDialog('Nome / codice arnia'); if(!name) return;
+      const h = { id: uid(), name, queenStatus:'sconosciuto', strength:3, supers:0, notes:'', inspections:[], harvests:[], frames: Array.from({length:10},()=> 'vuoto') };
+      a.hives.push(h); saveData(state.data); renderHives(); notify('Arnia aggiunta'); };
+
+    byId('searchApiary').oninput = renderApiaries;
+    byId('searchHive').oninput = renderHives;
+
+    byId('btnExport').onclick = () => { const blob = new Blob([JSON.stringify(state.data, null, 2)], {type:'application/json'});
+      const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `apiari-backup-${new Date().toISOString().slice(0,10)}.json`; a.click(); };
+    byId('fileImport').onchange = (e) => { const file=e.target.files[0]; if(!file) return; const reader=new FileReader();
+      reader.onload=()=>{ try{ const data=JSON.parse(reader.result); if(!Array.isArray(data)) throw new Error('Formato non valido');
+        state.data=data; localStorage.setItem(storeKey, JSON.stringify(state.data)); renderApiaries(); renderDetail(); scheduleCloudSave(); notify('Dati importati'); }catch(err){ alert('Errore importazione: '+err.message); } };
+      reader.readAsText(file); };
+    byId('btnReset').onclick = () => { if(!confirm('Azzera tutti i dati locali?')) return; localStorage.removeItem(storeKey); state.data=[]; renderApiaries(); renderDetail(); notify('Archivio azzerato'); };
+
+    // Cloud buttons & settings
+    document.getElementById('btnSettings').onclick = openSettings;
+    document.getElementById('btnCloudLoad').onclick = async () => { try{ await cloudLoad(); renderApiaries(); renderDetail(); notify('Scaricato dal cloud'); }catch(e){ alert(e.message); } };
+    document.getElementById('btnCloudSave').onclick = async () => { try{ await cloudSave(); notify('Salvato sul cloud'); }catch(e){ alert(e.message); } };
+
+    // Init: load from cloud (if set) then render
+    (async function init(){
+      const { gistId } = getCloudConfig();
+      if (gistId) { try{ await cloudLoad(); }catch(e){} }
+      else { setStatus('Cloud: non configurato', null); }
+      renderApiaries(); renderDetail();
+    })();
+  </script>
+</body>
+</html>
