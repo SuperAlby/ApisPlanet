@@ -1,39 +1,146 @@
 <!doctype html>
 <html lang="it">
 <head>
-<meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Gestione Apiari – Dettaglio</title>
-<style>
-  :root{--border:#1f2937;--card:#0b1220;--bg:#0f172a;--text:#e5e7eb;}
-  body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui, -apple-system, Segoe UI, Roboto, Arial}
-  header{padding:12px 16px;border-bottom:1px solid var(--border)}
-  .btn{padding:8px 12px;border:1px solid var(--border);background:#0f1a2f;color:var(--text);border-radius:8px}
-  #cloudStatus{padding:4px 8px;border:1px solid var(--border);border-radius:999px;font-size:12px;margin-left:8px}
-</style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Arnia – Dettaglio</title>
+  <style>
+    :root{ --bg:#0f172a; --panel:#111827; --muted:#94a3b8; --text:#e5e7eb; --accent:#22c55e; --accent-2:#3b82f6; --border:#1f2937; --card:#0b1220; --shadow:0 10px 30px rgba(0,0,0,.35); --radius:16px; }
+    *{box-sizing:border-box}
+    body{margin:0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Helvetica, Arial;
+      background: radial-gradient(1200px 800px at 80% -10%, rgba(59,130,246,.15), transparent 50%),
+                  radial-gradient(900px 600px at -10% 20%, rgba(34,197,94,.12), transparent 40%), var(--bg);
+      color:var(--text);
+    }
+    header{ position:sticky; top:0; z-index:9; background:rgba(11,18,32,.75); backdrop-filter: blur(10px); border-bottom:1px solid var(--border) }
+    .container{ max-width:760px; margin:0 auto; padding:16px }
+    h1{ font-size:18px; margin:0; display:flex; align-items:center; gap:12px }
+    .btn{ appearance:none; border:1px solid var(--border); background: linear-gradient(180deg,#0f1a2f,#0c1426); color:var(--text); padding:10px 14px; border-radius:12px; cursor:pointer; box-shadow:var(--shadow) }
+    .btn.primary{ background: linear-gradient(180deg,#1f883d,#166534); border-color:#14532d }
+    .btn.warn{ background: linear-gradient(180deg,#a16207,#92400e); border-color:#78350f }
+    .btn.ghost{ background: transparent }
+    input,select,textarea{ width:100%; background:#0a1220; border:1px solid var(--border); color:var(--text); padding:12px 14px; border-radius:14px; outline:none; font-size:16px }
+    textarea{ min-height: 100px }
+    .card{ background: linear-gradient(180deg, rgba(255,255,255,.02), transparent), var(--card); border:1px solid var(--border); border-radius: var(--radius); padding:16px; box-shadow:var(--shadow) }
+    .row{ display:grid; grid-template-columns: 1fr; gap:12px }
+    .section{ margin-top:16px }
+    .section h3{ margin: 0 0 8px 0 }
+    .divider{height:1px; background:var(--border); margin:12px 0}
+    .table{ width:100%; border-collapse: collapse }
+    .table th, .table td{ padding:8px 10px; border-bottom:1px solid var(--border); text-align:left }
+    .frames-grid{ display:grid; grid-template-columns: repeat(2, 1fr); grid-template-rows: repeat(5, auto); gap:12px; margin-top:8px }
+    .frame-cell{ border:1px solid var(--border); border-radius:12px; padding:10px; background:#0a1220; }
+    .frame-cell label{ display:block; font-size:14px; color:var(--muted); margin-bottom:6px }
+    .frames-toolbar{ display:flex; gap:8px; margin-top:8px; flex-wrap:wrap }
+    .frames-legend-box{ display:flex; flex-wrap:wrap; gap:8px; margin-top:12px }
+    .legend-item{ display:flex; align-items:center; gap:6px; font-size:12px; color: var(--muted) }
+    .legend-swatch{ width:16px; height:16px; border-radius:4px; border:1px solid var(--border) }
+    .muted{ color:var(--muted) }
+    #cloudStatus{padding:6px 10px;border:1px solid var(--border);border-radius:999px;font-size:12px}
+    dialog::backdrop{background:rgba(0,0,0,.5)}
+    dialog{border:1px solid var(--border);border-radius:16px;background:var(--card);color:var(--text);padding:16px;max-width:520px}
+    .dlg-row{display:grid;grid-template-columns:1fr;gap:8px;margin:8px 0}
+    .dlg-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:8px}
+  </style>
 </head>
 <body>
-<header>
-  <button class="btn" id="btnSettings">Impostazioni Cloud</button>
-  <button class="btn" id="btnCloudLoad">Scarica</button>
-  <button class="btn" id="btnCloudSave">Salva</button>
-  <span id="cloudStatus">Cloud: non configurato</span>
-</header>
+  <header>
+    <div class="container" style="display:flex; align-items:center; gap:12px;">
+      <button class="btn" id="btnBack">← Indietro</button>
+      <h1 id="pageTitle">Arnia</h1>
+      <div style="flex:1"></div>
+      <span id="cloudStatus">Cloud: non configurato</span>
+      <button class="btn" id="btnSettings">Impostazioni Cloud</button>
+      <button class="btn primary" id="btnSaveHive">Salva arnia</button>
+    </div>
+  </header>
 
-<dialog id="cloudSettings">
-  <h3>Impostazioni Cloud (Gist GitHub)</h3>
-  <label>ID Gist</label><input id="cfgGist"/><br/>
-  <label>Token</label><input id="cfgToken"/><br/>
-  <label>Nome file</label><input id="cfgFile" value="apiari.json"/><br/>
-  <menu>
-    <button onclick="clearSettings()" class="btn">Pulisci</button>
-    <button onclick="this.closest('dialog').close()" class="btn">Annulla</button>
-    <button onclick="saveSettings()" class="btn">Salva</button>
-  </menu>
-</dialog>
+  <!-- Dialog impostazioni cloud -->
+  <dialog id="cloudSettings">
+    <h3>Impostazioni Cloud (Gist GitHub)</h3>
+    <div class="dlg-row">
+      <label>ID Gist (privato)</label>
+      <input id="cfgGist" placeholder="es. a1b2c3d4..." />
+    </div>
+    <div class="dlg-row">
+      <label>Token GitHub (scope: gist)</label>
+      <input id="cfgToken" placeholder="token..." />
+    </div>
+    <div class="dlg-row">
+      <label>Nome file nel Gist</label>
+      <input id="cfgFile" placeholder="apiari.json" />
+    </div>
+    <div class="dlg-actions">
+      <button class="btn ghost" onclick="clearSettings()">Pulisci</button>
+      <button class="btn" onclick="document.getElementById('cloudSettings').close()">Annulla</button>
+      <button class="btn primary" onclick="saveSettings()">Salva impostazioni</button>
+    </div>
+  </dialog>
 
-<script>
-const state = { data: [] };
+  <main class="container" style="padding-top:16px;">
+    <div class="card">
+      <div class="row">
+        <div><label>Nome / codice</label><input id="hiveName" placeholder="Es. A12" /></div>
+        <div><label>Regina</label>
+          <select id="queenStatus">
+            <option value="sconosciuto">Sconosciuto</option>
+            <option value="presente">Presente</option>
+            <option value="assenza">Assente</option>
+            <option value="vergine">Vergine</option>
+            <option value="sostituita">Sostituita</option>
+          </select>
+        </div>
+        <div><label>Forza colonia (1-5)</label><input id="strength" type="number" min="1" max="5" value="3" /></div>
+        <div><label>Melari montati</label><input id="supers" type="number" min="0" value="0" /></div>
+      </div>
+      <div class="section">
+        <label>Note</label>
+        <textarea id="hiveNotes" placeholder="Appunti sull'arnia…"></textarea>
+      </div>
 
+      <div class="divider"></div>
+
+      <div class="section">
+        <h3>Disposizione favi (1–10)</h3>
+        <p class="muted">Due colonne da 5 per maggiore leggibilità.</p>
+        <div id="framesGrid" class="frames-grid"></div>
+        <div class="frames-toolbar">
+          <button class="btn" id="btnPresetFrames">Preset classico</button>
+          <button class="btn ghost" id="btnAllEmpty">Tutti vuoti</button>
+        </div>
+        <div class="frames-legend-box">
+          <div class="legend-item"><div class="legend-swatch" style="background:#111827"></div>Vuoto</div>
+          <div class="legend-item"><div class="legend-swatch" style="background:#2563eb"></div>Foglio cereo</div>
+          <div class="legend-item"><div class="legend-swatch" style="background:#10b981"></div>Favo costruito</div>
+          <div class="legend-item"><div class="legend-swatch" style="background:#f59e0b"></div>Covata aperta</div>
+          <div class="legend-item"><div class="legend-swatch" style="background:#d97706"></div>Covata opercolata</div>
+          <div class="legend-item"><div class="legend-swatch" style="background:#eab308"></div>Miele</div>
+          <div class="legend-item"><div class="legend-swatch" style="background:#a855f7"></div>Polline</div>
+          <div class="legend-item"><div class="legend-swatch" style="background:#64748b"></div>Diaframma</div>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="section">
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:12px;">
+          <h3>Ispezioni</h3><button class="btn" id="btnAddInspection">+ Aggiungi</button>
+        </div>
+        <table class="table" id="inspectionsTable"></table>
+      </div>
+
+      <div class="section">
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:12px;">
+          <h3>Raccolti miele</h3><button class="btn" id="btnAddHarvest">+ Aggiungi</button>
+        </div>
+        <table class="table" id="harvestsTable"></table>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    // 1) FIRST: define cloud (also defines storeKey)
+    
 // ====== CLOUD SYNC (Settings panel + status) ======
 const CLOUD_KEYS = { gistId: 'cloud.gistId', token: 'cloud.token', filename: 'cloud.filename' };
 const storeKey = 'apiariesData.v0';
@@ -116,13 +223,11 @@ function openSettings(){
       return;
     }
   }
-  const dlg = document.getElementById('cloudSettings');
-  // Original simple version; we'll patch this function below in the fallback build.
   const { gistId, token, filename } = getCloudConfig();
   try { dlg.querySelector('#cfgGist').value = gistId; } catch(e){}
   try { dlg.querySelector('#cfgToken').value = token; } catch(e){}
   try { dlg.querySelector('#cfgFile').value = filename; } catch(e){}
-  try { dlg.showModal(); } catch(e) { /* fallback */ openSettings(); return; }
+  try { dlg.showModal(); } catch(e) { openSettings(); return; }
 }
 function saveSettings(){
   const dlg = document.getElementById('cloudSettings');
@@ -131,9 +236,7 @@ function saveSettings(){
     gistId = dlg.querySelector('#cfgGist').value.trim();
     token  = dlg.querySelector('#cfgToken').value.trim();
     filename = (dlg.querySelector('#cfgFile').value.trim() || 'apiari.json');
-  } catch(e){
-    // ignore
-  }
+  } catch(e){}
   setCloudConfig({ gistId, token, filename });
   try { dlg.close(); } catch(e){}
   setStatus('Cloud: impostazioni salvate', null);
@@ -153,8 +256,133 @@ document.addEventListener('visibilitychange', () => {
   }
 });
 
-document.getElementById('btnSettings').onclick = openSettings;
-document.getElementById('btnCloudLoad').onclick = async () => { try{ await cloudLoad(); }catch(e){ alert(e.message); } };
-document.getElementById('btnCloudSave').onclick = async () => { try{ await cloudSave(); }catch(e){ alert(e.message); } };
-</script>
-</body></html>
+
+    // 2) THEN: helpers that use storeKey
+    const byId = id => document.getElementById(id);
+    const loadData = () => JSON.parse(localStorage.getItem(storeKey) || '[]');
+    const saveData = (d) => { localStorage.setItem(storeKey, JSON.stringify(d)); scheduleCloudSave(); };
+    const state = { data: loadData() };
+
+    const params = new URLSearchParams(location.search);
+    const apiaryId = params.get('apiary') || '';
+    const hiveId = params.get('hive') || '';
+
+    const FRAME_TYPES = [
+      { value: 'vuoto', label: 'Vuoto' },
+      { value: 'foglio', label: 'Foglio cereo' },
+      { value: 'costruito', label: 'Favo costruito' },
+      { value: 'covata_aperta', label: 'Covata aperta' },
+      { value: 'covata_operculata', label: 'Covata opercolata' },
+      { value: 'miele', label: 'Miele' },
+      { value: 'polline', label: 'Polline' },
+      { value: 'diaframma', label: 'Diaframma' }
+    ];
+    function getApiary(){ return state.data.find(a => a.id === apiaryId); }
+    function getHive(a){ return a ? (a.hives||[]).find(h => h.id === hiveId) : null; }
+    function ensureFrames(h){ if(!h.frames || h.frames.length!==10){ h.frames = Array.from({length:10}, ()=> 'vuoto'); } }
+    function escapeHtml(s){ return (s||'').replace(/[&<>\"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;','\\'':'&#39;'}[c])); }
+
+    function render(){
+      const apiary = getApiary();
+      const hive = getHive(apiary);
+      if(!apiary || !hive){ document.getElementById('pageTitle').textContent='Arnia non trovata'; return; }
+      ensureFrames(hive);
+      document.getElementById('pageTitle').textContent = `Arnia ${hive.name || ''} – ${apiary.name || 'Apiario'}`;
+      document.getElementById('hiveName').value = hive.name || '';
+      document.getElementById('queenStatus').value = hive.queenStatus || 'sconosciuto';
+      document.getElementById('strength').value = hive.strength ?? 3;
+      document.getElementById('supers').value = hive.supers ?? 0;
+      document.getElementById('hiveNotes').value = hive.notes || '';
+
+      const grid = document.getElementById('framesGrid'); grid.innerHTML='';
+      hive.frames.forEach((val,i)=>{
+        const cell=document.createElement('div'); cell.className='frame-cell';
+        const lab=document.createElement('label'); lab.textContent=`Favo ${i+1}`;
+        const sel=document.createElement('select'); sel.id=`frame_${i}`;
+        FRAME_TYPES.forEach(t=>{ const opt=document.createElement('option'); opt.value=t.value; opt.textContent=t.label; if(t.value===val) opt.selected=true; sel.appendChild(opt); });
+        sel.onchange = () => { const a=getApiary(); const h=getHive(a); h.frames[i]=sel.value; saveData(state.data); };
+        cell.appendChild(lab); cell.appendChild(sel); grid.appendChild(cell);
+      });
+
+      const inspTable = document.getElementById('inspectionsTable'); const inRows=[`<tr><th>Data</th><th>Azioni</th><th>Alimentazione</th><th>Trattamenti</th><th>Note</th><th></th></tr>`];
+      (hive.inspections||[]).sort((a,b)=> new Date(b.date)-new Date(a.date)).forEach((i,idx)=>{
+        inRows.push(`<tr>
+          <td>${new Date(i.date).toLocaleDateString()}</td>
+          <td>${escapeHtml(i.actions||'')}</td>
+          <td>${escapeHtml(i.feeding||'')}</td>
+          <td>${escapeHtml(i.treatments||'')}</td>
+          <td>${escapeHtml(i.notes||'')}</td>
+          <td><button class="btn warn" data-i="${idx}" data-act="delInspection">Elimina</button></td>
+        </tr>`);
+      });
+      inspTable.innerHTML = inRows.join('');
+      inspTable.querySelectorAll('[data-act="delInspection"]').forEach(btn => btn.onclick = () => { const a=getApiary(); const h=getHive(a); h.inspections.splice(+btn.dataset.i,1); saveData(state.data); try {
+        const apiary = getApiary();
+        const hive = getHive(apiary);
+        if (!apiary || !hive) { showError('Arnia non trovata. Forse il link è incompleto o i dati locali sono vuoti.'); return; }
+        render();
+      } catch(e) {
+        console.error(e);
+        showError('Si è verificato un errore nel dettaglio. Riprova o torna alla lista.');
+      } });
+
+      const harvTable = document.getElementById('harvestsTable'); const hvRows=[`<tr><th>Data</th><th>Kg miele</th><th>Note</th><th></th></tr>`];
+      (hive.harvests||[]).sort((a,b)=> new Date(b.date)-new Date(a.date)).forEach((r,idx)=>{
+        hvRows.push(`<tr>
+          <td>${new Date(r.date).toLocaleDateString()}</td>
+          <td>${Number(r.kg||0)}</td>
+          <td>${escapeHtml(r.notes||'')}</td>
+          <td><button class="btn warn" data-i="${idx}" data-act="delHarvest">Elimina</button></td>
+        </tr>`);
+      });
+      harvTable.innerHTML = hvRows.join('');
+      harvTable.querySelectorAll('[data-act="delHarvest"]').forEach(btn => btn.onclick = () => { const a=getApiary(); const h=getHive(a); h.harvests.splice(+btn.dataset.i,1); saveData(state.data); try {
+        const apiary = getApiary();
+        const hive = getHive(apiary);
+        if (!apiary || !hive) { showError('Arnia non trovata. Forse il link è incompleto o i dati locali sono vuoti.'); return; }
+        render();
+      } catch(e) {
+        console.error(e);
+        showError('Si è verificato un errore nel dettaglio. Riprova o torna alla lista.');
+      } });
+
+      document.getElementById('btnSaveHive').onclick = () => { const a=getApiary(); const h=getHive(a); if(!h) return;
+        h.name = document.getElementById('hiveName').value.trim();
+        h.queenStatus = document.getElementById('queenStatus').value;
+        h.strength = Number(document.getElementById('strength').value || 3);
+        h.supers = Number(document.getElementById('supers').value || 0);
+        h.notes = document.getElementById('hiveNotes').value.trim();
+        for(let i=0;i<10;i++){ const sel=document.getElementById(`frame_${i}`); if(sel) h.frames[i]=sel.value; }
+        saveData(state.data);
+        setStatus('Cloud: sincronizzato', true);
+      };
+    }
+
+    document.getElementById('btnBack').onclick = () => { history.back(); };
+    document.getElementById('btnSettings').onclick = openSettings;
+
+    (async function init(){
+      const showError = (msg) => {
+        try {
+          const c = document.querySelector('main .card');
+          if (c) { c.innerHTML = `<p style="color:#fca5a5">${msg}</p>
+            <p><button class="btn" onclick="location.href='index.html'">← Torna alla lista</button></p>`; }
+        } catch(e){}
+      };
+      const { gistId } = getCloudConfig();
+      if (gistId) { try{ await cloudLoad(); }catch(e){ console.error(e); /* Continua con dati locali */ } }
+      else { setStatus('Cloud: non configurato', null); }
+      try { state.data = JSON.parse(localStorage.getItem(storeKey) || '[]'); } catch(e) { console.error(e); state.data = []; }
+      try {
+        const apiary = getApiary();
+        const hive = getHive(apiary);
+        if (!apiary || !hive) { showError('Arnia non trovata. Forse il link è incompleto o i dati locali sono vuoti.'); return; }
+        render();
+      } catch(e) {
+        console.error(e);
+        showError('Si è verificato un errore nel dettaglio. Riprova o torna alla lista.');
+      }
+    })();
+  </script>
+</body>
+</html>
