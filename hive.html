@@ -316,7 +316,15 @@ document.addEventListener('visibilitychange', () => {
         </tr>`);
       });
       inspTable.innerHTML = inRows.join('');
-      inspTable.querySelectorAll('[data-act="delInspection"]').forEach(btn => btn.onclick = () => { const a=getApiary(); const h=getHive(a); h.inspections.splice(+btn.dataset.i,1); saveData(state.data); render(); });
+      inspTable.querySelectorAll('[data-act="delInspection"]').forEach(btn => btn.onclick = () => { const a=getApiary(); const h=getHive(a); h.inspections.splice(+btn.dataset.i,1); saveData(state.data); try {
+        const apiary = getApiary();
+        const hive = getHive(apiary);
+        if (!apiary || !hive) { showError('Arnia non trovata. Forse il link è incompleto o i dati locali sono vuoti.'); return; }
+        render();
+      } catch(e) {
+        console.error(e);
+        showError('Si è verificato un errore nel dettaglio. Riprova o torna alla lista.');
+      } });
 
       const harvTable = document.getElementById('harvestsTable'); const hvRows=[`<tr><th>Data</th><th>Kg miele</th><th>Note</th><th></th></tr>`];
       (hive.harvests||[]).sort((a,b)=> new Date(b.date)-new Date(a.date)).forEach((r,idx)=>{
@@ -328,7 +336,15 @@ document.addEventListener('visibilitychange', () => {
         </tr>`);
       });
       harvTable.innerHTML = hvRows.join('');
-      harvTable.querySelectorAll('[data-act="delHarvest"]').forEach(btn => btn.onclick = () => { const a=getApiary(); const h=getHive(a); h.harvests.splice(+btn.dataset.i,1); saveData(state.data); render(); });
+      harvTable.querySelectorAll('[data-act="delHarvest"]').forEach(btn => btn.onclick = () => { const a=getApiary(); const h=getHive(a); h.harvests.splice(+btn.dataset.i,1); saveData(state.data); try {
+        const apiary = getApiary();
+        const hive = getHive(apiary);
+        if (!apiary || !hive) { showError('Arnia non trovata. Forse il link è incompleto o i dati locali sono vuoti.'); return; }
+        render();
+      } catch(e) {
+        console.error(e);
+        showError('Si è verificato un errore nel dettaglio. Riprova o torna alla lista.');
+      } });
 
       document.getElementById('btnSaveHive').onclick = () => { const a=getApiary(); const h=getHive(a); if(!h) return;
         h.name = document.getElementById('hiveName').value.trim();
@@ -346,11 +362,26 @@ document.addEventListener('visibilitychange', () => {
     document.getElementById('btnSettings').onclick = openSettings;
 
     (async function init(){
+      const showError = (msg) => {
+        try {
+          const c = document.querySelector('main .card');
+          if (c) { c.innerHTML = `<p style="color:#fca5a5">${msg}</p>
+            <p><button class="btn" onclick="location.href='index.html'">← Torna alla lista</button></p>`; }
+        } catch(e){}
+      };
       const { gistId } = getCloudConfig();
-      if (gistId) { try{ await cloudLoad(); }catch(e){} }
+      if (gistId) { try{ await cloudLoad(); }catch(e){ console.error(e); /* Continua con dati locali */ } }
       else { setStatus('Cloud: non configurato', null); }
-      state.data = JSON.parse(localStorage.getItem(storeKey) || '[]');
-      render();
+      try { state.data = JSON.parse(localStorage.getItem(storeKey) || '[]'); } catch(e) { console.error(e); state.data = []; }
+      try {
+        const apiary = getApiary();
+        const hive = getHive(apiary);
+        if (!apiary || !hive) { showError('Arnia non trovata. Forse il link è incompleto o i dati locali sono vuoti.'); return; }
+        render();
+      } catch(e) {
+        console.error(e);
+        showError('Si è verificato un errore nel dettaglio. Riprova o torna alla lista.');
+      }
     })();
   </script>
 </body>
