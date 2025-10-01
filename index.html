@@ -1,14 +1,117 @@
 <!DOCTYPE html>
-<html>
+<html lang="it">
 <head>
-    <meta http-equiv="refresh" content="0; url=login.html">
-    <title>Reindirizzamento...</title>
-    <script type="text/javascript">
-        // Se il meta tag non funziona, usa il JavaScript
-        window.location.href = "login.html";
-    </script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestione Apiario – ApisPlanet</title>
+    <style>
+        /*
+        *************************************************
+        * STILE COPIATO DA LOGIN.HTML *
+        *************************************************
+        */
+        :root{--bg:#0f172a;--panel:#111827;--text:#e5e7eb;--muted:#94a3b8;--accent:#22c55e;--border:#1f2937;--card:#0b1220;--shadow:0 10px 30px rgba(0,0,0,.35);--radius:18px}
+        *{box-sizing:border-box}
+        body{margin:0;min-height:100vh;
+            font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,Helvetica,Arial;
+            background: radial-gradient(1200px 800px at 80% -10%, rgba(59,130,246,.15), transparent 50%),
+                        radial-gradient(900px 600px at -10% 20%, rgba(34,197,94,.12), transparent 40%), var(--bg);
+            color:var(--text);
+            padding: 20px;} /* Aggiunto padding per il contenuto principale */
+        /* Stili riadattati per i moduli di gestione */
+        .card-container{width:min(900px,96vw);margin:20px auto;
+            display:flex;flex-direction:column;gap:20px;}
+        .card{padding:28px;border:1px solid var(--border);border-radius:var(--radius);
+            background:linear-gradient(180deg,rgba(255,255,255,.03),transparent),var(--card);box-shadow:var(--shadow)}
+        h1{margin:4px 0 18px 0;font-size:32px;text-align:center;color:var(--accent)}
+        h2{margin:4px 0 16px 0;font-size:20px;color:var(--accent)}
+        label{display:block;margin:10px 0 6px 0;color:var(--muted);font-size:14px}
+        input, select, textarea{width:100%;padding:14px 16px;border-radius:14px;border:1px solid var(--border);background:#0a1220;color:var(--text);outline:none;font-size:16px;margin-bottom:12px;resize:vertical}
+        .btn{margin-top:16px;appearance:none;border:1px solid #14532d;border-radius:14px;padding:12px 16px;
+            background:linear-gradient(180deg,#1f883d,#166534);color:white;cursor:pointer;font-size:16px;
+            display: block; width: 100%;}
+        .btn:hover{filter: brightness(1.1);}
+        .btn-small{width:auto;margin:0 0 10px 0;padding:8px 14px;font-size:14px}
+        .form-section{margin-bottom:20px;}
+    </style>
 </head>
 <body>
-    <p>Caricamento in corso. Se non vieni reindirizzato, clicca <a href="login.html">qui</a>.</p>
+
+    <div id="app-container" style="display:none;">
+
+        <h1>Gestione Apiario ApisPlanet 🐝</h1>
+
+        <div class="card-container">
+
+            <div class="card">
+                <h2>1. Dati Apiario e Nuova Ispezione</h2>
+                <form id="apiarioForm" action="#" method="post">
+                    <div class="form-section">
+                        <label for="nome-apiario">Nome Apiario / Località</label>
+                        <input type="text" id="nome-apiario" name="nome_apiario" required placeholder="Esempio: Campo Ovest">
+
+                        <label for="id-arnia">ID Arnia</label>
+                        <input type="text" id="id-arnia" name="id_arnia" required placeholder="Esempio: AR003">
+
+                        <label for="data-ispezione">Data Ispezione</label>
+                        <input type="date" id="data-ispezione" name="data_ispezione">
+                    </div>
+
+                    <div class="form-section">
+                        <h2>2. Stato e Intervento</h2>
+                        <label for="stato-colonia">Stato attuale della Colonia</label>
+                        <select id="stato-colonia" name="stato_colonia">
+                            <option value="forte">Forte 💪</option>
+                            <option value="media">Media</option>
+                            <option value="debole">Debole 📉</option>
+                            <option value="persa">Persa 💀</option>
+                        </select>
+
+                        <label for="intervento-effettuato">Intervento Effettuato</label>
+                        <input type="text" id="intervento-effettuato" name="intervento_effettuato" placeholder="Es: Nutrizione, Trattamento Varroa">
+                        
+                        <label for="note-ispezione">Osservazioni e Note</label>
+                        <textarea id="note-ispezione" name="note_ispezione" rows="4" placeholder="Regina vista/non vista, presenza covata, scorte, temperamento..."></textarea>
+                    </div>
+
+                    <button class="btn" type="submit">Salva Registrazione Ispezione</button>
+                    <button class="btn btn-small" type="button" onclick="logout()">Logout</button>
+                </form>
+            </div>
+            
+            <div class="card" style="padding:16px; text-align:center;">
+                 <p style="color:var(--muted);">Qui in futuro sarà mostrato un riepilogo delle arnie e delle ispezioni salvate.</p>
+            </div>
+            
+        </div>
+    </div>
+
+    <script>
+        const AUTH_KEY = 'auth.user'; // Deve corrispondere alla chiave usata in login.html
+
+        function checkAuthentication() {
+            const existing = localStorage.getItem(AUTH_KEY);
+            const appContainer = document.getElementById('app-container');
+
+            if (existing === 'api') {
+                // Utente autenticato (l'indice 'api' è il valore fittizio usato nel login.html)
+                appContainer.style.display = 'block'; // Mostra l'applicazione
+            } else {
+                // Utente non autenticato: reindirizza alla pagina di login
+                const base = (new URL('.', location.href)).href;
+                location.href = base + 'login.html';
+            }
+        }
+        
+        function logout() {
+            localStorage.removeItem(AUTH_KEY); // Rimuove lo stato di login
+            const base = (new URL('.', location.href)).href;
+            location.href = base + 'login.html'; // Reindirizza al login
+        }
+
+        // Esegui il controllo quando la pagina viene caricata
+        checkAuthentication();
+    </script>
+
 </body>
 </html>
