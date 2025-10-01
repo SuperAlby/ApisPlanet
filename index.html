@@ -5,19 +5,26 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestione Apiario 🐝</title>
     <style>
+        /*
+        *************************************************
+        * STILE DA INTEGRARE DAL TUO FILE LOGIN.HTML *
+        *************************************************
+        */
+
+        /* Stile Generale per Apiario (già presente) */
         body {
             font-family: Arial, sans-serif;
-            margin: 20px;
+            margin: 0;
             background-color: #f4f4f9;
             color: #333;
         }
         h1 {
-            color: #ffb703; /* Giallo miele */
+            color: #ffb703;
             text-align: center;
             border-bottom: 2px solid #ffb703;
             padding-bottom: 10px;
         }
-        form {
+        .form-apiario {
             background-color: #fff;
             padding: 20px;
             border-radius: 8px;
@@ -25,25 +32,20 @@
             max-width: 600px;
             margin: 20px auto;
         }
+        /* ... Altri stili per il modulo Apiario ... */
         label {
             display: block;
             margin-bottom: 5px;
             font-weight: bold;
-            color: #023047; /* Blu scuro */
+            color: #023047;
         }
-        input[type="text"],
-        input[type="date"],
-        textarea,
-        select {
+        input[type="text"], input[type="date"], textarea, select {
             width: 100%;
             padding: 10px;
             margin-bottom: 15px;
             border: 1px solid #ccc;
             border-radius: 4px;
-            box-sizing: border-box; /* Per includere padding e bordo nella larghezza */
-        }
-        textarea {
-            resize: vertical;
+            box-sizing: border-box;
         }
         button {
             background-color: #ffb703;
@@ -64,63 +66,115 @@
             margin-bottom: 20px;
             border-radius: 5px;
         }
+
+        /* ------------------------------------------- */
+        /* Stile per il Form di Login (Nuovo/Ipotetico) */
+        /* ------------------------------------------- */
+        .login-container {
+            width: 100%;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #f0f0f5; /* Sfondo che si adatti allo stile login */
+        }
+        .login-box {
+            background-color: #fff;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+            width: 90%;
+            max-width: 350px;
+            text-align: center;
+        }
+        .login-box h2 {
+            color: #ffb703;
+            margin-bottom: 20px;
+        }
+        .login-box input[type="text"],
+        .login-box input[type="password"] {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            box-sizing: border-box;
+        }
+        .login-box button {
+            width: 100%;
+        }
+        #login-error {
+            color: red;
+            margin-bottom: 15px;
+            font-size: 0.9em;
+            display: none;
+        }
     </style>
 </head>
 <body>
 
-    <h1>Gestione del tuo Apiario 🍯</h1>
-
-    <form action="#" method="post">
-        
-        <div class="form-section">
-            <h2>Dati Apiario</h2>
-            <label for="nome-apiario">Nome Apiario / Località:</label>
-            <input type="text" id="nome-apiario" name="nome_apiario" required>
-
-            <label for="coordinate">Coordinate GPS (Opzionale):</label>
-            <input type="text" id="coordinate" name="coordinate">
+    <div id="login-page" class="login-container">
+        <div class="login-box">
+            <h2>Accesso Apiario</h2>
+            <div id="login-error">Credenziali non valide. Riprova.</div>
+            <input type="text" id="username" placeholder="Nome Utente">
+            <input type="password" id="password" placeholder="Password">
+            <button onclick="checkLogin()">Accedi</button>
         </div>
+    </div>
 
-        <div class="form-section">
-            <h2>Dati Arnia / Colonia</h2>
-            <label for="id-arnia">ID Arnia:</label>
-            <input type="text" id="id-arnia" name="id_arnia" required>
+    <div id="main-content" style="display: none;">
+        <div style="margin: 20px;"> <h1>Gestione del tuo Apiario 🍯</h1>
 
-            <label for="tipo-arnia">Tipo di Arnia:</label>
-            <select id="tipo-arnia" name="tipo_arnia">
-                <option value="dadant">Dadant Blatt</option>
-                <option value="langstroth">Langstroth</option>
-                <option value="topbar">Top Bar</option>
-                <option value="altro">Altro</option>
-            </select>
+            <form action="#" method="post" class="form-apiario">
+
+                <div class="form-section">
+                    <h2>Dati Apiario</h2>
+                    <label for="nome-apiario">Nome Apiario / Località:</label>
+                    <input type="text" id="nome-apiario" name="nome_apiario" required>
+                    </div>
+
+                <div class="form-section">
+                    <h2>Dati Arnia / Colonia</h2>
+                    <label for="id-arnia">ID Arnia:</label>
+                    <input type="text" id="id-arnia" name="id_arnia" required>
+                    </div>
+
+                <div class="form-section">
+                    <h2>Ispezione / Intervento</h2>
+                    <label for="note-ispezione">Osservazioni e Note:</label>
+                    <textarea id="note-ispezione" name="note_ispezione" rows="4" placeholder="Regina vista/non vista, stato covata, temperamento, ecc."></textarea>
+                </div>
+
+                <button type="submit">Salva Dati</button>
+
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Funzione di verifica login fittizia
+        function checkLogin() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const loginPage = document.getElementById('login-page');
+            const mainContent = document.getElementById('main-content');
+            const errorDiv = document.getElementById('login-error');
+
+            // QUI INSERIRESTI LA TUA VERA LOGICA DI AUTENTICAZIONE
+            // Ad esempio, un controllo con AJAX a un server o una verifica locale
             
-            <label for="data-inizio">Data di inizio Colonia:</label>
-            <input type="date" id="data-inizio" name="data_inizio">
-            
-            <label for="stato-colonia">Stato attuale della Colonia:</label>
-            <select id="stato-colonia" name="stato_colonia">
-                <option value="forte">Forte</option>
-                <option value="media">Media</option>
-                <option value="debole">Debole</option>
-                <option value="persa">Persa</option>
-            </select>
-        </div>
-        
-        <div class="form-section">
-            <h2>Ispezione / Intervento</h2>
-            <label for="data-ispezione">Data Ispezione:</label>
-            <input type="date" id="data-ispezione" name="data_ispezione">
-
-            <label for="intervento-effettuato">Intervento Effettuato:</label>
-            <input type="text" id="intervento-effettuato" name="intervento_effettuato" placeholder="Es: Trattamento Varroa, Raccolta Melario, Nutrizione">
-
-            <label for="note-ispezione">Osservazioni e Note:</label>
-            <textarea id="note-ispezione" name="note_ispezione" rows="4" placeholder="Regina vista/non vista, stato covata, temperamento, ecc."></textarea>
-        </div>
-
-        <button type="submit">Salva Dati</button>
-
-    </form>
+            // Esempio di credenziali FITTIZIE: utente="apicoltore", password="miele"
+            if (username === 'apicoltore' && password === 'miele') {
+                // Login Riuscito
+                loginPage.style.display = 'none'; // Nasconde la pagina di login
+                mainContent.style.display = 'block'; // Mostra il contenuto principale
+            } else {
+                // Login Fallito
+                errorDiv.style.display = 'block'; // Mostra il messaggio di errore
+            }
+        }
+    </script>
 
 </body>
 </html>
