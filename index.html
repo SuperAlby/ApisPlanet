@@ -226,7 +226,7 @@ async function cloudSave({keepalive=false}={}){
 function debounce(fn, ms){ let t; return (...args)=>{ clearTimeout(t); t=setTimeout(()=>fn(...args), ms); }; }
 const scheduleCloudSave = debounce(() => cloudSave().catch(()=>{}), 800);
 
-// Settings Panel handlers (with prompt fallback)
+// Settings Panel handlers (with fallback to prompts)
 function openSettings(){
   const dlg = document.getElementById('cloudSettings');
   if (!dlg || typeof dlg.showModal !== 'function') {
@@ -316,7 +316,7 @@ document.addEventListener('visibilitychange', () => {
         tpl.querySelector('.name').textContent = h.name || 'Arnia';
         tpl.querySelector('.strength').textContent = h.strength ?? '-';
         tpl.querySelector('.supers').textContent = h.supers ?? 0;
-        const st = tpl.querySelector('.status'); st.textContent = `Regina: ${h.queenStatus||'?'}`;
+        tpl.querySelector('.status').textContent = `Regina: ${h.queenStatus||'?'}`;
         const lastUpd = new Date(Math.max(...(h.inspections||[]).map(i=>+new Date(i.date)), ...(h.harvests||[]).map(r=>+new Date(r.date)), 0));
         tpl.querySelector('.updated').textContent = lastUpd.getTime()? `Ultimo aggiornamento: ${lastUpd.toLocaleDateString()}` : 'Nessun aggiornamento';
         ensureFrames(h);
@@ -343,7 +343,7 @@ document.addEventListener('visibilitychange', () => {
 
     // Actions
     byId('btnNewApiary').onclick = async () => { const name = prompt('Nome del nuovo apiario'); if(!name) return;
-      const a = { id: Math.random().toString(36).slice(2,9), name, location:'', notes:'', hives:[] };
+      const a = { id: uid(), name, location:'', notes:'', hives:[] };
       state.data.push(a); saveData(state.data); renderApiaries(); openApiary(a.id); notify('Apiario creato'); };
     byId('btnSaveApiary').onclick = () => { const a=getApiary(); if(!a) return;
       a.name = byId('apiaryName').value.trim(); a.location = byId('apiaryLocation').value.trim(); a.notes = byId('apiaryNotes').value.trim();
@@ -351,19 +351,11 @@ document.addEventListener('visibilitychange', () => {
     byId('btnDeleteApiary').onclick = () => { const a=getApiary(); if(!a) return; if(!confirm('Eliminare questo apiario e tutte le arnie?')) return;
       state.data = state.data.filter(x=>x.id!==a.id); saveData(state.data); renderApiaries(); renderDetail(); notify('Apiario eliminato'); };
     byId('btnAddHive').onclick = async () => { const a=getApiary(); if(!a) return; const name = prompt('Nome / codice arnia'); if(!name) return;
-      const h = { id: Math.random().toString(36).slice(2,9), name, queenStatus:'sconosciuto', strength:3, supers:0, notes:'', inspections:[], harvests:[], frames: Array.from({length:10},()=> 'vuoto') };
+      const h = { id: uid(), name, queenStatus:'sconosciuto', strength:3, supers:0, notes:'', inspections:[], harvests:[], frames: Array.from({length:10},()=> 'vuoto') };
       a.hives.push(h); saveData(state.data); renderHives(); notify('Arnia aggiunta'); };
 
     byId('searchApiary').oninput = renderApiaries;
     byId('searchHive').oninput = renderHives;
-
-    byId('btnExport').onclick = () => { const blob = new Blob([JSON.stringify(state.data, null, 2)], {type:'application/json'});
-      const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `apiari-backup-${new Date().toISOString().slice(0,10)}.json`; a.click(); };
-    byId('fileImport').onchange = (e) => { const file=e.target.files[0]; if(!file) return; const reader=new FileReader();
-      reader.onload=()=>{ try{ const data=JSON.parse(reader.result); if(!Array.isArray(data)) throw new Error('Formato non valido');
-        state.data=data; localStorage.setItem(storeKey, JSON.stringify(state.data)); renderApiaries(); renderDetail(); scheduleCloudSave(); notify('Dati importati'); }catch(err){ alert('Errore importazione: '+err.message); } };
-      reader.readAsText(file); };
-    byId('btnReset').onclick = () => { if(!confirm('Azzera tutti i dati locali?')) return; localStorage.removeItem(storeKey); state.data=[]; renderApiaries(); renderDetail(); notify('Archivio azzerato'); };
 
     // Cloud buttons & settings
     document.getElementById('btnSettings').onclick = openSettings;
@@ -377,6 +369,23 @@ document.addEventListener('visibilitychange', () => {
       else { setStatus('Cloud: non configurato', null); }
       renderApiaries(); renderDetail();
     })();
+
+    // --- Refresh UI quando torni alla pagina (Back/Forward cache, focus, storage) ---
+    function rehydrateFromStorage(){
+      try {
+        const prev = state.selectedApiaryId;
+        state.data = loadData();
+        renderApiaries();
+        if (prev && state.data.some(a => a.id === prev)) {
+          state.selectedApiaryId = prev;
+        }
+        renderDetail();
+      } catch(e){ console.error('rehydrate error', e); }
+    }
+    window.addEventListener('pageshow', (e) => { rehydrateFromStorage(); });
+    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') rehydrateFromStorage(); });
+    window.addEventListener('focus', rehydrateFromStorage);
+    window.addEventListener('storage', (e) => { if (e.key === storeKey) rehydrateFromStorage(); });
   </script>
 </body>
 </html>
