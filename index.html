@@ -169,7 +169,7 @@
           localStorage.setItem(AUTH_KEY, 'api');
           tryLoadConfigFile().finally(()=>{
             const base = (new URL('.', location.href)).href;
-            location.href = base + 'index.html';
+            location.href = base + 'GestioneApiario.html';
           });
         } else {
           alert('Credenziali non valide. Usa utente "api" e password "api".');
