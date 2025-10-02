@@ -157,7 +157,7 @@
       if (existing === 'api') {
         tryLoadConfigFile().finally(()=>{
           const base = (new URL('.', location.href)).href;
-          location.href = base + 'GestioneApiario.html';
+          location.href = base + 'index.html';
         });
         return;
       }
