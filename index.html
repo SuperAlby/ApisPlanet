@@ -165,11 +165,12 @@
         e.preventDefault();
         const u = document.getElementById('user').value.trim();
         const p = document.getElementById('pass').value;
-        if (u === 'api' && p === 'api') {
+         if (u === 'api' && p === 'api') {
           localStorage.setItem(AUTH_KEY, 'api');
           tryLoadConfigFile().finally(()=>{
             const base = (new URL('.', location.href)).href;
-            location.href = base + 'GestioneApiario.html';
+            // CAMBIARE QUI: Reindirizza alla pagina di riepilogo
+            location.href = base + 'GestioneApiario.html'; 
           });
         } else {
           alert('Credenziali non valide. Usa utente "api" e password "api".');
