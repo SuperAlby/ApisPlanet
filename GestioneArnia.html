@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dettaglio Arnia – ApisPlanet</title>
+    <style>
+        /* CSS Identico al tuo file allegato per coerenza grafica */
+        :root{--bg:#0f172a;--panel:#111827;--text:#e5e7eb;--muted:#94a3b8;--accent:#22c55e;--border:#1f2937;--card:#0b1220;--shadow:0 10px 30px rgba(0,0,0,.35);--radius:18px}
+        *{box-sizing:border-box}
+        body{margin:0;min-height:100vh;font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,Helvetica,Arial;background: radial-gradient(1200px 800px at 80% -10%, rgba(59,130,246,.15), transparent 50%), radial-gradient(900px 600px at -10% 20%, rgba(34,197,94,.12), transparent 40%), var(--bg);color:var(--text);padding: 20px;}
+        .card-container{width:min(900px,96vw);margin:20px auto;display:flex;flex-direction:column;gap:20px;}
+        .card{padding:28px;border:1px solid var(--border);border-radius:var(--radius);background:linear-gradient(180deg,rgba(255,255,255,.03),transparent),var(--card);box-shadow:var(--shadow)}
+        h1{margin:4px 0 18px 0;font-size:32px;text-align:center;color:var(--accent)}
+        h2{margin:4px 0 16px 0;font-size:20px;color:var(--accent)}
+        label{display:block;margin:10px 0 6px 0;color:var(--muted);font-size:14px}
+        input, select, textarea{width:100%;padding:14px 16px;border-radius:14px;border:1px solid var(--border);background:#0a1220;color:var(--text);outline:none;font-size:16px;margin-bottom:12px;resize:vertical}
+        .btn{margin-top:16px;appearance:none;border:1px solid #14532d;border-radius:14px;padding:12px 16px;background:linear-gradient(180deg,#1f883d,#166534);color:white;cursor:pointer;font-size:16px;display: block; width: 100%;}
+        .btn:hover{filter: brightness(1.1);}
+        .btn-small{width:auto;margin:0 0 10px 0;padding:8px 14px;font-size:14px}
+        .form-section{margin-bottom:20px;}
+
+        /* Layout Favi */
+        .favi-grid {display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; border: 1px dashed var(--border); padding: 10px; border-radius: 8px;}
+        .favo {padding: 5px 10px; border-radius: 6px; cursor: pointer; font-size: 14px; user-select: none; transition: background-color 0.2s;}
+        .favo-covata {background-color: #fb8500; color: #0b1220;}
+        .favo-miele {background-color: #f59e0b; color: #0b1220;}
+        .favo-vuoto {background-color: #1f2937; color: var(--muted);}
+        .favo:hover {filter: brightness(1.2);}
+        .favo-label {font-size: 12px; display: block; text-align: center; color: var(--muted);}
+    </style>
+</head>
+<body>
+
+    <div id="app-container" style="display:none;">
+        <h1 id="page-title">Dettaglio Arnia </h1>
+        <div class="card-container">
+            <div class="card">
+                <form id="arniaForm">
+                    <div class="form-section">
+                        <h2 id="arnia-id-display">Arnia ID: <span id="current-arnia-id">NUOVA</span></h2>
+                        <label for="data-ispezione">Data Ispezione</label>
+                        <input type="date" id="data-ispezione" name="data_ispezione" required>
+
+                        <label for="stato-colonia">Stato Regina/Colonia</label>
+                        <select id="stato-colonia" name="stato_colonia">
+                            <option value="Regina Vista">Regina Vista 🟢</option>
+                            <option value="Regina Non Vista">Regina Non Vista ❓</option>
+                            <option value="Orfana">Orfana 🔴</option>
+                            <option value="Forte">Forte</option>
+                            <option value="Media">Media</option>
+                            <option value="Debole">Debole</option>
+                        </select>
+                        
+                        <label for="tipo-arnia">Tipo Arnia</label>
+                        <select id="tipo-arnia" name="tipo_arnia">
+                            <option value="Dadant">Dadant Blatt</option>
+                            <option value="Langstroth">Langstroth</option>
+                            <option value="Top Bar">Top Bar</option>
+                        </select>
+                    </div>
+
+                    <div class="form-section">
+                        <h2>Disposizione Favi (<span id="favi-count">10</span> Favi)</h2>
+                        <p style="color:var(--muted); font-size: 14px;">Clicca sui favi per cambiare lo stato (Covata/Miele/Vuoto).</p>
+                        <div class="favi-grid" id="favi-grid">
+                            </div>
+                    </div>
+                    
+                    <div class="form-section">
+                        <h2>Trattamenti / Interventi</h2>
+                        <label for="intervento-effettuato">Intervento Effettuato (Breve)</label>
+                        <input type="text" id="intervento-effettuato" name="intervento_effettuato" placeholder="Es: Trattamento ossalico, nutrizione, inserimento telaini">
+                        
+                        <label for="note-ispezione">Note Dettagliate</label>
+                        <textarea id="note-ispezione" name="note_ispezione" rows="4" placeholder="Covata compatta/sfarfallata, scorte, temperamento..."></textarea>
+                    </div>
+
+                    <div style="display:flex; gap:10px;">
+                        <button class="btn" type="submit" style="flex-grow:1;">Salva e Torna a Riepilogo</button>
+                        <button class="btn btn-small" type="button" onclick="goBack()" style="flex-grow:0;">Annulla</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const AUTH_KEY = 'auth.user'; 
+        const STORAGE_KEY = 'apisplanet.arnie';
+        let currentArnia = null;
+        let isNewArnia = false;
+        
+        // --- LOGICA AUTENTICAZIONE ---
+        function checkAuthentication() {
+            if (localStorage.getItem(AUTH_KEY) !== 'api') {
+                goBack(true); // Reindirizza al login se non autenticato
+                return;
+            }
+            document.getElementById('app-container').style.display = 'block';
+            loadArniaData();
+        }
+
+        function goBack(toLogin = false) {
+            const base = (new URL('.', location.href)).href;
+            if (toLogin) {
+                location.href = base + 'index.html';
+            } else {
+                // Torna alla pagina di riepilogo
+                location.href = base + 'GestioneApiario.html'; 
+            }
+        }
+        
+        // --- LOGICA DATI ARNIA ---
+        const FAvo_STATES = ['favo-covata', 'favo-miele', 'favo-vuoto'];
+        const STATE_LABELS = { 'favo-covata': 'Covata', 'favo-miele': 'Miele', 'favo-vuoto': 'Vuoto' };
+
+        function loadArniaData() {
+            const arniaId = localStorage.getItem('editArniaId');
+            const apiarioId = localStorage.getItem('editApiarioId');
+            
+            if (!apiarioId) {
+                alert('Errore: Apiario non selezionato.');
+                goBack();
+                return;
+            }
+
+            let arnieData = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+            const arnieList = arnieData[apiarioId] || [];
+            
+            if (arniaId) {
+                // Modalità Modifica
+                currentArnia = arnieList.find(a => a.id === arniaId);
+                if (!currentArnia) {
+                    alert('Errore: Arnia non trovata.');
+                    goBack();
+                    return;
+                }
+                document.getElementById('current-arnia-id').textContent = currentArnia.id;
+                document.getElementById('page-title').textContent = `Dettaglio Arnia ${currentArnia.id} 🛠️`;
+                
+                // Popola il form con i dati esistenti (ultima ispezione)
+                document.getElementById('data-ispezione').value = new Date().toISOString().substring(0, 10); // Data odierna
+                document.getElementById('stato-colonia').value = currentArnia.stato.split(' ')[0] || 'Regina Vista';
+                document.getElementById('intervento-effettuato').value = currentArnia.intervento || '';
+                
+            } else {
+                // Modalità Nuova Arnia
+                isNewArnia = true;
+                const newId = prompt("Inserisci l'ID della Nuova Arnia (es: AR004):");
+                if (!newId || arnieList.some(a => a.id === newId)) {
+                    alert('ID non valido o già esistente.');
+                    goBack();
+                    return;
+                }
+                currentArnia = { 
+                    id: newId, 
+                    ultima_ispezione: new Date().toISOString().substring(0, 10), 
+                    stato: 'Forte', 
+                    intervento: 'Nuova Colonia', 
+                    favi: 10,
+                    favi_status: Array(10).fill('favo-vuoto'), // Inizializza 10 favi vuoti
+                    tipo_arnia: 'Dadant'
+                };
+                document.getElementById('current-arnia-id').textContent = currentArnia.id;
+                document.getElementById('page-title').textContent = `Aggiungi Nuova Arnia ➕`;
+            }
+            
+            // Inizializza la visualizzazione dei favi
+            if (!currentArnia.favi_status) {
+                currentArnia.favi_status = Array(currentArnia.favi || 10).fill('favo-vuoto');
+            }
+            renderFavi();
+            
+            document.getElementById('arniaForm').addEventListener('submit', saveArniaData);
+        }
+        
+        function renderFavi() {
+            const grid = document.getElementById('favi-grid');
+            grid.innerHTML = '';
+            document.getElementById('favi-count').textContent = currentArnia.favi_status.length;
+            
+            currentArnia.favi_status.forEach((status, index) => {
+                const favoContainer = document.createElement('div');
+                const favo = document.createElement('div');
+                const label = document.createElement('span');
+                
+                favoContainer.style.margin = '4px';
+                
+                favo.classList.add('favo', status);
+                favo.textContent = index + 1; // Numero del favo
+                
+                label.classList.add('favo-label');
+                label.textContent = STATE_LABELS[status];
+                
+                favo.onclick = () => {
+                    const currentIndex = FAvo_STATES.indexOf(favo.classList[1]);
+                    const nextIndex = (currentIndex + 1) % FAvo_STATES.length;
+                    const nextStatus = FAvo_STATES[nextIndex];
+                    
+                    // Aggiorna l'oggetto dati
+                    currentArnia.favi_status[index] = nextStatus;
+                    
+                    // Aggiorna la UI
+                    favo.classList.remove(...FAvo_STATES);
+                    favo.classList.add(nextStatus);
+                    label.textContent = STATE_LABELS[nextStatus];
+                };
+                
+                favoContainer.appendChild(favo);
+                favoContainer.appendChild(label);
+                grid.appendChild(favoContainer);
+            });
+        }
+        
+        function saveArniaData(e) {
+            e.preventDefault();
+            
+            // 1. Recupera i dati del form
+            const form = e.target;
+            
+            // 2. Aggiorna l'oggetto arnia
+            currentArnia.ultima_ispezione = form['data_ispezione'].value;
+            currentArnia.stato = form['stato-colonia'].value;
+            currentArnia.intervento = form['intervento-effettuato'].value;
+            currentArnia.tipo_arnia = form['tipo-arnia'].value;
+            currentArnia.note = form['note-ispezione'].value;
+            
+            // Aggiungo anche una sintesi per la tabella di riepilogo
+            currentArnia.stato_riepilogo = form['stato-colonia'].value.split(' ')[0]; 
+            currentArnia.intervento_riepilogo = currentArnia.intervento.substring(0, 30);
+            
+            // 3. Carica tutti i dati di localStorage
+            let arnieData = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+            const apiarioId = localStorage.getItem('editApiarioId');
+            
+            if (!arnieData[apiarioId]) {
+                arnieData[apiarioId] = [];
+            }
+
+            // 4. Salva o Aggiorna l'arnia
+            if (isNewArnia) {
+                arnieData[apiarioId].push(currentArnia);
+            } else {
+                const index = arnieData[apiarioId].findIndex(a => a.id === currentArnia.id);
+                if (index > -1) {
+                    arnieData[apiarioId][index] = currentArnia;
+                }
+            }
+            
+            // 5. Salva in localStorage e reindirizza
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(arnieData));
+            localStorage.removeItem('editArniaId'); // Pulisce le variabili di sessione
+            localStorage.removeItem('editApiarioId'); 
+            
+            goBack();
+        }
+
+        // Esegui il controllo quando la pagina viene caricata
+        checkAuthentication();
+    </script>
+</body>
+</html>
