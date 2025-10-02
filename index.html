@@ -26,7 +26,6 @@
 </head>
 <body>
   <div class="card">
-    <!-- Logo ape stilizzato -->
     <svg class="logo" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
       <circle cx="32" cy="32" r="30" fill="#0b1220" stroke="#1f2937"/>
       <ellipse cx="32" cy="34" rx="16" ry="12" fill="#f59e0b" stroke="#1f2937"/>
@@ -154,23 +153,29 @@
     (function(){
       refreshCfgInfo();
       const existing = localStorage.getItem(AUTH_KEY);
+      
+      // Controllo se l'utente è già autenticato
       if (existing === 'api') {
         tryLoadConfigFile().finally(()=>{
           const base = (new URL('.', location.href)).href;
-          location.href = base + 'index.html';
+          // Se autenticato, va direttamente alla pagina di gestione
+          location.href = base + 'GestioneApiario.html';
         });
         return;
       }
+      
       document.getElementById('loginForm').addEventListener('submit', (e)=>{
         e.preventDefault();
         const u = document.getElementById('user').value.trim();
         const p = document.getElementById('pass').value;
-         if (u === 'api' && p === 'api') {
+        
+        // Logica di autenticazione (demo: api/api)
+        if (u === 'api' && p === 'api') {
           localStorage.setItem(AUTH_KEY, 'api');
           tryLoadConfigFile().finally(()=>{
             const base = (new URL('.', location.href)).href;
-            // CAMBIARE QUI: Reindirizza alla pagina di riepilogo
-            location.href = base + 'GestioneApiario.html'; 
+            // Dopo il login, reindirizza alla pagina di gestione
+            location.href = base + 'GestioneApiario.html';
           });
         } else {
           alert('Credenziali non valide. Usa utente "api" e password "api".');
