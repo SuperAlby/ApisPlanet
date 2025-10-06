@@ -64,14 +64,16 @@
   <script>
     const AUTH_KEY = 'auth.user';
     const CLOUD_KEYS = { gistId: 'cloud.gistId', token: 'cloud.token', filename: 'cloud.filename' };
-
-    function getCloudConfig(){
+    
+    // Rendi questa funzione GLOBALE (accessibile da tutti i file)
+    window.getCloudConfig = function() {
       return {
         gistId: localStorage.getItem(CLOUD_KEYS.gistId) || '',
         token:  localStorage.getItem(CLOUD_KEYS.token)  || '',
         filename: localStorage.getItem(CLOUD_KEYS.filename) || 'apiari.json'
       };
-    }
+    };
+
     function setCloudConfig({gistId, token, filename}){
       if (gistId != null)  localStorage.setItem(CLOUD_KEYS.gistId, gistId.trim());
       if (token != null)   localStorage.setItem(CLOUD_KEYS.token, token.trim());
@@ -123,7 +125,7 @@
     function refreshCfgInfo(){
       const el = document.getElementById('cfgInfo');
       const { gistId, filename } = getCloudConfig();
-      el.textContent = gistId ? `Gist: ${gistId.slice(0,6)}… · file: ${filename}` : 'Cloud non configurato';
+      el.textContent = gistId ? `Cloud: ${gistId.slice(0,6)}… · file: ${filename}` : 'Cloud non configurato';
     }
 
     document.getElementById('toSettings').addEventListener('click', (e)=>{
@@ -154,13 +156,13 @@
       refreshCfgInfo();
       const existing = localStorage.getItem(AUTH_KEY);
       
-      // Controllo se l'utente è già autenticato
-      if (existing === 'api') {
-        tryLoadConfigFile().finally(()=>{
+      const redirect = ()=>{
           const base = (new URL('.', location.href)).href;
-          // Se autenticato, va direttamente alla pagina di gestione
           location.href = base + 'GestioneApiario.html';
-        });
+      };
+
+      if (existing === 'api') {
+        tryLoadConfigFile().finally(redirect);
         return;
       }
       
@@ -169,14 +171,9 @@
         const u = document.getElementById('user').value.trim();
         const p = document.getElementById('pass').value;
         
-        // Logica di autenticazione (demo: api/api)
         if (u === 'api' && p === 'api') {
           localStorage.setItem(AUTH_KEY, 'api');
-          tryLoadConfigFile().finally(()=>{
-            const base = (new URL('.', location.href)).href;
-            // Dopo il login, reindirizza alla pagina di gestione
-            location.href = base + 'GestioneApiario.html';
-          });
+          tryLoadConfigFile().finally(redirect);
         } else {
           alert('Credenziali non valide. Usa utente "api" e password "api".');
         }
