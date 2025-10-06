@@ -99,7 +99,11 @@
                     const res = await fetch(`https://api.github.com/gists/${config.gistId}`, {
                         headers: { 'Authorization': `token ${config.token}` }
                     });
-                    if (!res.ok) throw new Error('Fallito il recupero del Gist.');
+                    
+                    if (!res.ok) {
+                        // Nuovo messaggio di errore dettagliato in caso di fallimento
+                        throw new Error(`Accesso Gist fallito (Status: ${res.status}). Verifica ID/Token.`);
+                    }
                     
                     const gist = await res.json();
                     const file = gist.files?.[config.filename];
@@ -112,6 +116,8 @@
                     }
                 } catch (e) {
                     console.error("Errore Gist Cloud, fallback su locale:", e);
+                    // Pop-up che ti aiuta a diagnosticare l'errore
+                    alert("ERRORE DI CARICAMENTO: L'accesso al Cloud è fallito. Controlla Gist ID e Token. Dettaglio: " + e.message);
                     document.getElementById('sync-status').textContent = 'Errore Cloud. Dati caricati dalla cache.';
                 }
             }
@@ -146,10 +152,17 @@
                         },
                         body: JSON.stringify({ files: { [config.filename]: { content: JSON.stringify(dataToSave, null, 2) } } })
                     });
-                    if (!res.ok) throw new Error('Salvataggio Gist fallito.');
+                    
+                    if (!res.ok) {
+                        // Nuovo messaggio di errore dettagliato in caso di fallimento
+                        throw new Error(`Salvataggio Gist fallito (Status: ${res.status}). Verifica ID/Token.`);
+                    }
+                    
                     document.getElementById('sync-status').textContent = 'Sincronizzato sul Cloud.';
                 } catch (e) {
                     console.error("Errore salvataggio Gist:", e);
+                    // Pop-up che ti aiuta a diagnosticare l'errore
+                    alert("ERRORE DI SALVATAGGIO: Il salvataggio Cloud è fallito. Controlla Gist ID e Token. Dettaglio: " + e.message);
                     document.getElementById('sync-status').textContent = 'Salvataggio Cloud fallito! Dati salvati localmente.';
                 }
             } else {
