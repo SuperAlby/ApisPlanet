@@ -27,6 +27,7 @@
         tr:hover {background-color: #1a2333;}
         .action-link {color: #93c5fd;cursor: pointer;text-decoration: none;}
         .header-controls {display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 10px;}
+        #sync-status {font-size: 14px; text-align: center; margin-top: 10px; color: var(--accent);}
     </style>
 </head>
 <body>
@@ -34,6 +35,7 @@
     <div id="app-container" style="display:none;">
 
         <h1>Riepilogo Apiari ApisPlanet 🏡</h1>
+        <div id="sync-status">Caricamento dati...</div>
 
         <div class="card-container">
 
@@ -75,26 +77,93 @@
         const AUTH_KEY = 'auth.user'; 
         const STORAGE_KEY = 'apisplanet.arnie';
         const CURRENT_APIARY_KEY = 'apisplanet.current_apiary';
+        let arnieData = {}; // GLOBAL: i dati dell'applicazione sono qui
         
-        // Dati di esempio (saranno sovrascritti da localStorage)
-        let arnieData = {
+        // Dati di esempio (fallback se il cloud è vuoto)
+        const defaultArnieData = {
             'Apiario_A': [
                 { id: 'AR001', ultima_ispezione: '2025-09-20', stato: 'Forte 💪', intervento: 'Nutrizione', favi: 10 },
-                { id: 'AR002', ultima_ispezione: '2025-08-15', stato: 'Media', intervento: 'Raccolta Melario', favi: 9 }
             ],
-            'Apiario_B': [
-                { id: 'AR010', ultima_ispezione: '2025-09-25', stato: 'Debole 📉', intervento: 'Trattamento Varroa', favi: 7 }
-            ]
+            'Apiario_B': []
         };
         
-        // --- FUNZIONI DI AUTENTICAZIONE ---
-        function checkAuthentication() {
-            const existing = localStorage.getItem(AUTH_KEY);
-            const appContainer = document.getElementById('app-container');
+        // --- FUNZIONI DI GESTIONE CLOUD GLOBALI ---
 
-            if (existing === 'api') {
-                appContainer.style.display = 'block';
-                loadApiariesAndArnie(); // Chiama la funzione principale dopo l'autenticazione
+        async function loadDataFromCloud() {
+            document.getElementById('sync-status').textContent = 'Sincronizzazione in corso...';
+            const config = window.getCloudConfig ? window.getCloudConfig() : {};
+            
+            // 1. Caricamento da Cloud
+            if (config.gistId && config.token) {
+                try {
+                    const res = await fetch(`https://api.github.com/gists/${config.gistId}`, {
+                        headers: { 'Authorization': `token ${config.token}` }
+                    });
+                    if (!res.ok) throw new Error('Fallito il recupero del Gist.');
+                    
+                    const gist = await res.json();
+                    const file = gist.files?.[config.filename];
+                    
+                    if (file?.content) {
+                        arnieData = JSON.parse(file.content);
+                        document.getElementById('sync-status').textContent = 'Dati caricati dal Cloud.';
+                        localStorage.setItem(STORAGE_KEY, file.content); // Cache locale
+                        return;
+                    }
+                } catch (e) {
+                    console.error("Errore Gist Cloud, fallback su locale:", e);
+                    document.getElementById('sync-status').textContent = 'Errore Cloud. Dati caricati dalla cache.';
+                }
+            }
+
+            // 2. Fallback su Cache Locale (localStorage)
+            const storedData = localStorage.getItem(STORAGE_KEY);
+            if (storedData) {
+                arnieData = JSON.parse(storedData);
+            } else {
+                // 3. Fallback su Dati di Esempio
+                arnieData = defaultArnieData;
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(arnieData));
+                document.getElementById('sync-status').textContent = 'Dati inizializzati localmente.';
+            }
+        }
+        
+        async function saveDataToCloud(dataToSave) {
+            document.getElementById('sync-status').textContent = 'Salvataggio in corso...';
+            const config = window.getCloudConfig ? window.getCloudConfig() : {};
+
+            // 1. Aggiorna la cache locale immediatamente
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(dataToSave));
+
+            // 2. Salvataggio su Cloud
+            if (config.gistId && config.token) {
+                try {
+                    const res = await fetch(`https://api.github.com/gists/${config.gistId}`, {
+                        method: 'PATCH',
+                        headers: {
+                            'Authorization': `token ${config.token}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ files: { [config.filename]: { content: JSON.stringify(dataToSave, null, 2) } } })
+                    });
+                    if (!res.ok) throw new Error('Salvataggio Gist fallito.');
+                    document.getElementById('sync-status').textContent = 'Sincronizzato sul Cloud.';
+                } catch (e) {
+                    console.error("Errore salvataggio Gist:", e);
+                    document.getElementById('sync-status').textContent = 'Salvataggio Cloud fallito! Dati salvati localmente.';
+                }
+            } else {
+                document.getElementById('sync-status').textContent = 'Dati salvati solo localmente (Cloud non configurato).';
+            }
+        }
+        
+        // --- FUNZIONI DI AUTENTICAZIONE E LOGICA PAGINA ---
+        
+        async function checkAuthentication() {
+            if (localStorage.getItem(AUTH_KEY) === 'api') {
+                await loadDataFromCloud(); // CHIAMATA ASINCRONA AL CLOUD
+                document.getElementById('app-container').style.display = 'block';
+                loadApiariesAndArnie();
             } else {
                 const base = (new URL('.', location.href)).href;
                 location.href = base + 'index.html'; // Reindirizza al login
@@ -107,16 +176,7 @@
             location.href = base + 'index.html';
         }
         
-        // --- FUNZIONI DI GESTIONE DATI ---
-        
         function loadApiariesAndArnie() {
-            const storedData = localStorage.getItem(STORAGE_KEY);
-            if (storedData) {
-                arnieData = JSON.parse(storedData);
-            } else {
-                // Inizializza con i dati di esempio e salvali
-                localStorage.setItem(STORAGE_KEY, JSON.stringify(arnieData));
-            }
             
             const selector = document.getElementById('selettore-apiario');
             
@@ -126,11 +186,14 @@
             // 2. Ottieni l'apiario corrente salvato o usa il primo disponibile
             const currentApiary = localStorage.getItem(CURRENT_APIARY_KEY) || firstApiary;
             
-            // *** PUNTO CRITICO RISOLTO: Forza il salvataggio dell'apiario corrente ***
+            // 3. Forza il salvataggio dell'apiario corrente (RISOLVE L'ERRORE)
             if (currentApiary) {
                 localStorage.setItem(CURRENT_APIARY_KEY, currentApiary);
+            } else {
+                 // Non ci sono apiari, forziamo l'aggiunta dell'Apiario A
+                 arnieData['Apiario_A'] = arnieData['Apiario_A'] || [];
+                 localStorage.setItem(CURRENT_APIARY_KEY, 'Apiario_A');
             }
-            // *************************************************************************
             
             selector.innerHTML = ''; // Pulisci le opzioni
             
@@ -138,7 +201,7 @@
             Object.keys(arnieData).forEach(apiarioId => {
                 const option = document.createElement('option');
                 option.value = apiarioId;
-                option.textContent = apiarioId.replace('_', ' '); // Formattazione leggibile
+                option.textContent = apiarioId.replace('_', ' ');
                 if (apiarioId === currentApiary) {
                     option.selected = true;
                 }
@@ -163,20 +226,17 @@
             
             if (selectedApiaryId === 'Nuovo') {
                 alert('Funzione per la gestione/aggiunta di nuovi apiari non implementata in questa demo.');
-                
-                // Torna all'apiario precedentemente selezionato (o al primo)
                 const prevApiary = localStorage.getItem(CURRENT_APIARY_KEY) || Object.keys(arnieData)[0];
                 selector.value = prevApiary;
                 selectedApiaryId = prevApiary; 
                 if (!selectedApiaryId) return; 
             }
 
-            // Salva l'apiario corrente
             localStorage.setItem(CURRENT_APIARY_KEY, selectedApiaryId);
             apiarioCorrente.textContent = selectedApiaryId.replace('_', ' ');
             
             const arnie = arnieData[selectedApiaryId] || [];
-            tbody.innerHTML = ''; // Pulisci la tabella
+            tbody.innerHTML = ''; 
             
             if (arnie.length === 0) {
                 noArnie.style.display = 'block';
@@ -206,26 +266,20 @@
         }
         
         function goToArnia(apiarioId, arniaId) {
-            // Se apiarioId è indefinito (chiamato dal pulsante Aggiungi), usa quello attualmente selezionato
             const currentApiario = apiarioId || document.getElementById('selettore-apiario').value;
 
-            // Salva l'Apiario corrente in localStorage
             localStorage.setItem('editApiarioId', currentApiario);
             
-            // Salva l'ID dell'arnia da modificare (se esiste) in localStorage
             if (arniaId) {
                 localStorage.setItem('editArniaId', arniaId);
             } else {
-                 // Per una nuova arnia, rimuovi l'ID precedente
                 localStorage.removeItem('editArniaId');
             }
             
-            // Vai alla pagina di gestione arnia
             const base = (new URL('.', location.href)).href;
             location.href = base + 'GestioneArnia.html';
         }
 
-        // Esegui il controllo quando la pagina viene caricata
         checkAuthentication();
     </script>
 
