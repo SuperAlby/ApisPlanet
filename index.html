@@ -21,7 +21,7 @@
     .btn{width:100%;margin-top:16px;appearance:none;border:1px solid #14532d;border-radius:14px;padding:12px 16px;
       background:linear-gradient(180deg,#1f883d,#166534);color:white;cursor:pointer}
     .hint{margin-top:10px;color:var(--muted);text-align:center;font-size:13px}
-    .meta{margin-top:16px;display:flex;justify-content:space-between;color:var(--muted);font-size:12px}
+    /* Rimosso .meta */
   </style>
 </head>
 <body>
@@ -43,130 +43,42 @@
       <button class="btn" type="submit">Accedi</button>
     </form>
     <div class="hint">Demo: utente <b>api</b> · password <b>api</b></div>
-    <div class="meta">
-      <span id="cfgInfo"></span>
-      <a href="#" id="toSettings" style="color:#93c5fd">Impostazioni Cloud</a>
+    <div class="meta" style="margin-top:16px;">
+      <span id="cfgInfo" style="color:#f87171;">⚠ TOKEN IN CODICE SORGENTE (RISCHIO SICUREZZA)</span>
     </div>
   </div>
 
-  <dialog id="cloudSettings" style="border:1px solid var(--border);border-radius:16px;background:#0b1220;color:var(--text);padding:16px;max-width:520px">
-    <h3>Impostazioni Cloud (Gist GitHub)</h3>
-    <label>ID Gist</label><input id="cfgGist"/>
-    <label>Token GitHub (gist)</label><input id="cfgToken"/>
-    <label>Nome file dati</label><input id="cfgFile" value="apiari.json"/>
-    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px">
-      <button onclick="clearSettings()">Pulisci</button>
-      <button onclick="this.closest('dialog').close()">Annulla</button>
-      <button onclick="saveSettings()">Salva impostazioni</button>
-    </div>
-  </dialog>
-
   <script>
     const AUTH_KEY = 'auth.user';
-    const CLOUD_KEYS = { gistId: 'cloud.gistId', token: 'cloud.token', filename: 'cloud.filename' };
-    
-    // Rendi questa funzione GLOBALE (accessibile da tutti i file)
+
+    // ***************************************************************
+    // *** INSERISCI QUI I TUOI DATI CLOUD (CON ENORME RISCHIO) ***
+    // ***************************************************************
+    const HARDCODED_GIST_ID = 'INSERISCI_QUI_IL_TUO_ID_GIST'; // <--- SOSTITUISCI
+    const HARDCODED_TOKEN   = 'INSERISCI_QUI_IL_TUO_TOKEN_GITHUB'; // <--- SOSTITUISCI
+    const DEFAULT_FILENAME  = 'apiari.json';
+    // ***************************************************************
+
+    // Funzione globale che restituisce SEMPRE i valori hardcoded
     window.getCloudConfig = function() {
       return {
-        gistId: localStorage.getItem(CLOUD_KEYS.gistId) || '',
-        token:  localStorage.getItem(CLOUD_KEYS.token)  || '',
-        filename: localStorage.getItem(CLOUD_KEYS.filename) || 'apiari.json'
+        gistId: HARDCODED_GIST_ID,
+        token:  HARDCODED_TOKEN,
+        filename: DEFAULT_FILENAME
       };
     };
 
-    function setCloudConfig({gistId, token, filename}){
-      if (gistId != null)  localStorage.setItem(CLOUD_KEYS.gistId, gistId.trim());
-      if (token != null)   localStorage.setItem(CLOUD_KEYS.token, token.trim());
-      if (filename != null)localStorage.setItem(CLOUD_KEYS.filename, filename.trim());
-      try { saveConfigFile().catch(()=>{}); } catch(e){}
-    }
-    function clearSettings(){
-      localStorage.removeItem(CLOUD_KEYS.gistId);
-      localStorage.removeItem(CLOUD_KEYS.token);
-      localStorage.removeItem(CLOUD_KEYS.filename);
-      try { document.getElementById('cloudSettings').close(); } catch(e){}
-      refreshCfgInfo();
-    }
-    async function saveConfigFile(){
-      const { gistId, token, filename } = getCloudConfig();
-      if (!gistId || !token) return;
-      const cfg = { appName: 'ApisPlanet', filename };
-      const res = await fetch(`https://api.github.com/gists/${gistId}`, {
-        method:'PATCH',
-        headers:{
-          'Authorization': `token ${token}`,
-          'Accept': 'application/vnd.github+json',
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ files: { 'config.json': { content: JSON.stringify(cfg, null, 2) } } })
-      });
-      return res.ok;
-    }
-    async function tryLoadConfigFile(){
-      const { gistId, token } = getCloudConfig();
-      if (!gistId || !token) return;
-      const res = await fetch(`https://api.github.com/gists/${gistId}`, {
-        headers:{
-          'Authorization': `token ${token}`,
-          'Accept': 'application/vnd.github+json'
-        }
-      });
-      if (!res.ok) return;
-      const gist = await res.json();
-      const file = gist.files?.['config.json'];
-      if (file?.content) {
-        try{
-          const cfg = JSON.parse(file.content);
-          if (cfg?.filename) localStorage.setItem(CLOUD_KEYS.filename, cfg.filename);
-        }catch(e){}
-      }
-      refreshCfgInfo();
-    }
-    function refreshCfgInfo(){
-      const el = document.getElementById('cfgInfo');
-      const { gistId, filename } = getCloudConfig();
-      el.textContent = gistId ? `Cloud: ${gistId.slice(0,6)}… · file: ${filename}` : 'Cloud non configurato';
-    }
-
-    document.getElementById('toSettings').addEventListener('click', (e)=>{
-      e.preventDefault();
-      const dlg = document.getElementById('cloudSettings');
-      const { gistId, token, filename } = getCloudConfig();
-      dlg.querySelector('#cfgGist').value = gistId;
-      dlg.querySelector('#cfgToken').value = token;
-      dlg.querySelector('#cfgFile').value  = filename;
-      if (typeof dlg.showModal === 'function') dlg.showModal(); else {
-        const g = prompt('ID Gist:', gistId||''); if (g===null) return;
-        const t = prompt('Token (scope: gist):', token||''); if (t===null) return;
-        const f = prompt('Nome file dati:', filename||'apiari.json') || 'apiari.json';
-        setCloudConfig({ gistId:g, token:t, filename:f });
-      }
-    });
-    function saveSettings(){
-      const dlg = document.getElementById('cloudSettings');
-      const gistId = dlg.querySelector('#cfgGist').value.trim();
-      const token  = dlg.querySelector('#cfgToken').value.trim();
-      const file   = (dlg.querySelector('#cfgFile').value.trim() || 'apiari.json');
-      setCloudConfig({ gistId, token, filename:file });
-      try { dlg.close(); } catch(e){}
-      refreshCfgInfo();
-    }
-
     (function(){
-      refreshCfgInfo();
       const existing = localStorage.getItem(AUTH_KEY);
       
       const redirect = ()=>{
           const base = (new URL('.', location.href)).href;
-          location.href = base + 'GestioneApiario.html';
+          location.href = base + 'GestioneApiario.html'; // CORRETTO
       };
 
       if (existing === 'api') {
-        tryLoadConfigFile().finally(()=>{
-          const base = (new URL('.', location.href)).href;
-          // Se già loggato, reindirizza direttamente alla pagina di gestione
-          location.href = base + 'GestioneApiario.html'; 
-        });
+        // Logica di accesso semplificata
+        redirect();
         return;
       }
       
@@ -177,7 +89,7 @@
         
         if (u === 'api' && p === 'api') {
           localStorage.setItem(AUTH_KEY, 'api');
-          tryLoadConfigFile().finally(redirect);
+          redirect();
         } else {
           alert('Credenziali non valide. Usa utente "api" e password "api".');
         }
