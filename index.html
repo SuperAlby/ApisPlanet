@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Accesso – ApisPlanet</title>
   <style>
+    /* Stile CSS omesso per brevità */
     :root{--bg:#0f172a;--panel:#111827;--text:#e5e7eb;--muted:#94a3b8;--accent:#22c55e;--border:#1f2937;--card:#0b1220;--shadow:0 10px 30px rgba(0,0,0,.35);--radius:18px}
     *{box-sizing:border-box}
     body{margin:0;min-height:100svh;display:grid;place-items:center;
@@ -49,13 +50,14 @@
   </div>
 
   <script>
+    // VERSIONE: 5.1
     const AUTH_KEY = 'auth.user';
 
     // ***************************************************************
-    // *** INSERISCI QUI I TUOI DATI CLOUD (CON ENORME RISCHIO) ***
+    // *** DATI CLOUD (HARDCODED) ***
     // ***************************************************************
-    const HARDCODED_GIST_ID = '6b744268f1a7f8bcd7fdf3fe8e574716'; // <--- SOSTITUISCI
-    const HARDCODED_TOKEN   = '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'; // <--- SOSTITUISCI
+    const HARDCODED_GIST_ID = '6b744268f1a7f8bcd7fdf3fe8e574716'; // ID Gist
+    const HARDCODED_TOKEN   = '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'; // Token GitHub
     const DEFAULT_FILENAME  = 'apiari.json';
     // ***************************************************************
 
@@ -69,15 +71,16 @@
     };
 
     (function(){
+      console.log("index.html V5.1 - Logica di login avviata.");
       const existing = localStorage.getItem(AUTH_KEY);
       
       const redirect = ()=>{
           const base = (new URL('.', location.href)).href;
-          location.href = base + 'GestioneApiario.html'; // CORRETTO
+          alert("0. index.html V5.1 - Credenziali OK. Reindirizzamento a GestioneApiario.html");
+          location.href = base + 'GestioneApiario.html'; 
       };
 
       if (existing === 'api') {
-        // Logica di accesso semplificata
         redirect();
         return;
       }
