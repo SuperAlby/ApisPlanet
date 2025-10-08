@@ -73,7 +73,7 @@
         </div>
     </div>
 
-    <script>
+<script>
         const AUTH_KEY = 'auth.user'; 
         const STORAGE_KEY = 'apisplanet.arnie';
         const CURRENT_APIARY_KEY = 'apisplanet.current_apiary';
@@ -91,6 +91,7 @@
 
         async function loadDataFromCloud() {
             document.getElementById('sync-status').textContent = 'Sincronizzazione in corso...';
+            // Supponiamo che getCloudConfig sia una funzione globale definita in login/index.html
             const config = window.getCloudConfig ? window.getCloudConfig() : {};
             
             // 1. Caricamento da Cloud
@@ -101,8 +102,8 @@
                     });
                     
                     if (!res.ok) {
-                        // Nuovo messaggio di errore dettagliato in caso di fallimento
-                        throw new Error(`Accesso Gist fallito (Status: ${res.status}). Verifica ID/Token.`);
+                        // In caso di errore API (es. 401, 404), passa al fallback
+                        throw new Error(`Accesso Gist fallito (Status: ${res.status}).`);
                     }
                     
                     const gist = await res.json();
@@ -116,8 +117,7 @@
                     }
                 } catch (e) {
                     console.error("Errore Gist Cloud, fallback su locale:", e);
-                    // Pop-up che ti aiuta a diagnosticare l'errore
-                    alert("ERRORE DI CARICAMENTO: L'accesso al Cloud è fallito. Controlla Gist ID e Token. Dettaglio: " + e.message);
+                    // L'errore non blocca l'UI, ma usa il fallback
                     document.getElementById('sync-status').textContent = 'Errore Cloud. Dati caricati dalla cache.';
                 }
             }
@@ -126,6 +126,7 @@
             const storedData = localStorage.getItem(STORAGE_KEY);
             if (storedData) {
                 arnieData = JSON.parse(storedData);
+                document.getElementById('sync-status').textContent = 'Dati caricati dalla cache.';
             } else {
                 // 3. Fallback su Dati di Esempio
                 arnieData = defaultArnieData;
@@ -154,15 +155,12 @@
                     });
                     
                     if (!res.ok) {
-                        // Nuovo messaggio di errore dettagliato in caso di fallimento
-                        throw new Error(`Salvataggio Gist fallito (Status: ${res.status}). Verifica ID/Token.`);
+                        throw new Error(`Salvataggio Gist fallito (Status: ${res.status}).`);
                     }
                     
                     document.getElementById('sync-status').textContent = 'Sincronizzato sul Cloud.';
                 } catch (e) {
                     console.error("Errore salvataggio Gist:", e);
-                    // Pop-up che ti aiuta a diagnosticare l'errore
-                    alert("ERRORE DI SALVATAGGIO: Il salvataggio Cloud è fallito. Controlla Gist ID e Token. Dettaglio: " + e.message);
                     document.getElementById('sync-status').textContent = 'Salvataggio Cloud fallito! Dati salvati localmente.';
                 }
             } else {
@@ -174,12 +172,15 @@
         
         async function checkAuthentication() {
             if (localStorage.getItem(AUTH_KEY) === 'api') {
-                await loadDataFromCloud(); // CHIAMATA ASINCRONA AL CLOUD
+                // PRIMO PASSO: Carica i dati dal Cloud
+                await loadDataFromCloud(); 
+                
                 document.getElementById('app-container').style.display = 'block';
                 loadApiariesAndArnie();
             } else {
                 const base = (new URL('.', location.href)).href;
-                location.href = base + 'index.html'; // Reindirizza al login
+                // Torna alla pagina di login (index.html o login.html)
+                location.href = base + 'index.html'; 
             }
         }
         
@@ -190,27 +191,19 @@
         }
         
         function loadApiariesAndArnie() {
-            
+            // Qui dovresti avere gli elementi per l'interfaccia mostrata nello screenshot
             const selector = document.getElementById('selettore-apiario');
             
-            // 1. Definisci il primo Apiario disponibile come fallback
             const firstApiary = Object.keys(arnieData)[0] || 'Apiario_A';
-            
-            // 2. Ottieni l'apiario corrente salvato o usa il primo disponibile
             const currentApiary = localStorage.getItem(CURRENT_APIARY_KEY) || firstApiary;
             
-            // 3. Forza il salvataggio dell'apiario corrente (RISOLVE L'ERRORE)
-            if (currentApiary) {
-                localStorage.setItem(CURRENT_APIARY_KEY, currentApiary);
-            } else {
-                 // Non ci sono apiari, forziamo l'aggiunta dell'Apiario A
-                 arnieData['Apiario_A'] = arnieData['Apiario_A'] || [];
-                 localStorage.setItem(CURRENT_APIARY_KEY, 'Apiario_A');
+            if (!arnieData[firstApiary]) {
+                 arnieData[firstApiary] = [];
             }
+            localStorage.setItem(CURRENT_APIARY_KEY, currentApiary);
             
-            selector.innerHTML = ''; // Pulisci le opzioni
+            selector.innerHTML = ''; 
             
-            // Popola il selettore Apiario
             Object.keys(arnieData).forEach(apiarioId => {
                 const option = document.createElement('option');
                 option.value = apiarioId;
@@ -221,7 +214,6 @@
                 selector.appendChild(option);
             });
             
-            // Aggiungi opzione fittizia per gestione
             const optionManage = document.createElement('option');
             optionManage.value = 'Nuovo';
             optionManage.textContent = 'Gestisci / Aggiungi Apiario...';
@@ -231,6 +223,7 @@
         }
 
         function loadArnie() {
+            // Funzione per popolare la tabella delle arnie (identica alla versione precedente)
             const selector = document.getElementById('selettore-apiario');
             let selectedApiaryId = selector.value;
             const tbody = document.querySelector('#arnie-table tbody');
@@ -295,6 +288,5 @@
 
         checkAuthentication();
     </script>
-
 </body>
 </html>
