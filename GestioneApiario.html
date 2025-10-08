@@ -3,31 +3,41 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Riepilogo Apiario – ApisPlanet</title>
+    <title>Riepilogo Apiari – ApisPlanet</title>
     <style>
-        /* CSS Identico per coerenza grafica */
+        /* Stili Base */
         :root{--bg:#0f172a;--panel:#111827;--text:#e5e7eb;--muted:#94a3b8;--accent:#22c55e;--border:#1f2937;--card:#0b1220;--shadow:0 10px 30px rgba(0,0,0,.35);--radius:18px}
         *{box-sizing:border-box}
-        body{margin:0;min-height:100vh;font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,Helvetica,Arial;background: radial-gradient(1200px 800px at 80% -10%, rgba(59,130,246,.15), transparent 50%), radial-gradient(900px 600px at -10% 20%, rgba(34,197,94,.12), transparent 40%), var(--bg);color:var(--text);padding: 20px;}
-        .card-container{width:min(900px,96vw);margin:20px auto;display:flex;flex-direction:column;gap:20px;}
-        .card{padding:28px;border:1px solid var(--border);border-radius:var(--radius);background:linear-gradient(180deg,rgba(255,255,255,.03),transparent),var(--card);box-shadow:var(--shadow)}
+        body{margin:0;min-height:100vh;
+            font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,Helvetica,Arial;
+            background: radial-gradient(1200px 800px at 80% -10%, rgba(59,130,246,.15), transparent 50%),
+                        radial-gradient(900px 600px at -10% 20%, rgba(34,197,94,.12), transparent 40%), var(--bg);
+            color:var(--text);
+            padding: 20px;}
+        .card-container{width:min(900px,96vw);margin:20px auto;
+            display:flex;flex-direction:column;gap:20px;}
+        .card{padding:28px;border:1px solid var(--border);border-radius:var(--radius);
+            background:linear-gradient(180deg,rgba(255,255,255,.03),transparent),var(--card);box-shadow:var(--shadow)}
         h1{margin:4px 0 18px 0;font-size:32px;text-align:center;color:var(--accent)}
         h2{margin:4px 0 16px 0;font-size:20px;color:var(--accent)}
         label{display:block;margin:10px 0 6px 0;color:var(--muted);font-size:14px}
         input, select, textarea{width:100%;padding:14px 16px;border-radius:14px;border:1px solid var(--border);background:#0a1220;color:var(--text);outline:none;font-size:16px;margin-bottom:12px;resize:vertical}
-        .btn{margin-top:16px;appearance:none;border:1px solid #14532d;border-radius:14px;padding:12px 16px;background:linear-gradient(180deg,#1f883d,#166534);color:white;cursor:pointer;font-size:16px;display: block; width: 100%;}
+        .btn{margin-top:16px;appearance:none;border:1px solid #14532d;border-radius:14px;padding:12px 16px;
+            background:linear-gradient(180deg,#1f883d,#166534);color:white;cursor:pointer;font-size:16px;
+            display: block; width: 100%;}
         .btn:hover{filter: brightness(1.1);}
         .btn-small{width:auto;margin:0 0 10px 0;padding:8px 14px;font-size:14px}
         .form-section{margin-bottom:20px;}
-
-        /* Stile Tabella */
+        
+        /* Stili Riepilogo */
         table {width: 100%;border-collapse: collapse;margin-top: 15px;}
         th, td {padding: 12px 15px;text-align: left;border-bottom: 1px solid var(--border);}
         th {background-color: var(--panel);color: var(--accent);font-weight: bold;}
         tr:hover {background-color: #1a2333;}
         .action-link {color: #93c5fd;cursor: pointer;text-decoration: none;}
         .header-controls {display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 10px;}
-        #sync-status {font-size: 14px; text-align: center; margin-top: 10px; color: var(--accent);}
+        #sync-status {font-size: 14px; text-align: center; margin-top: 10px; color: var(--muted);}
+        .btn-add {background: linear-gradient(180deg, #10b981, #059669); border: 1px solid #065f46; color: white;}
     </style>
 </head>
 <body>
@@ -35,7 +45,7 @@
     <div id="app-container" style="display:none;">
 
         <h1>Riepilogo Apiari ApisPlanet 🏡</h1>
-        <div id="sync-status">Caricamento dati...</div>
+        <div id="sync-status">Sincronizzazione in corso...</div>
 
         <div class="card-container">
 
@@ -46,7 +56,7 @@
                         <select id="selettore-apiario" onchange="loadArnie()">
                             </select>
                     </div>
-                    <button class="btn btn-small" onclick="goToArnia()">+ Aggiungi Nuova Arnia</button>
+                    <button class="btn btn-small btn-add" onclick="goToArnia()">+ Aggiungi Nuova Arnia</button>
                 </div>
             </div>
 
@@ -68,12 +78,12 @@
                 <p id="no-arnie" style="text-align:center; color:var(--muted); margin-top: 20px; display:none;">Nessuna arnia registrata per questo apiario.</p>
             </div>
             
-            <button class="btn btn-small" type="button" onclick="logout()">Logout</button>
+            <button class="btn" type="button" onclick="logout()">Logout</button>
             
         </div>
     </div>
 
-<script>
+    <script>
         const AUTH_KEY = 'auth.user'; 
         const STORAGE_KEY = 'apisplanet.arnie';
         const CURRENT_APIARY_KEY = 'apisplanet.current_apiary';
@@ -87,11 +97,11 @@
             'Apiario_B': []
         };
         
-        // --- FUNZIONI DI GESTIONE CLOUD GLOBALI ---
+        // --- FUNZIONI DI GESTIONE CLOUD GLOBALI (Necessitano di window.getCloudConfig) ---
 
         async function loadDataFromCloud() {
             document.getElementById('sync-status').textContent = 'Sincronizzazione in corso...';
-            // Supponiamo che getCloudConfig sia una funzione globale definita in login/index.html
+            // Usa window.getCloudConfig (definita in index.html) per prendere i dati hardcoded/configurati
             const config = window.getCloudConfig ? window.getCloudConfig() : {};
             
             // 1. Caricamento da Cloud
@@ -102,7 +112,7 @@
                     });
                     
                     if (!res.ok) {
-                        // In caso di errore API (es. 401, 404), passa al fallback
+                        // Se fallisce (es. 401, 404), passa al fallback locale
                         throw new Error(`Accesso Gist fallito (Status: ${res.status}).`);
                     }
                     
@@ -117,7 +127,6 @@
                     }
                 } catch (e) {
                     console.error("Errore Gist Cloud, fallback su locale:", e);
-                    // L'errore non blocca l'UI, ma usa il fallback
                     document.getElementById('sync-status').textContent = 'Errore Cloud. Dati caricati dalla cache.';
                 }
             }
@@ -172,15 +181,14 @@
         
         async function checkAuthentication() {
             if (localStorage.getItem(AUTH_KEY) === 'api') {
-                // PRIMO PASSO: Carica i dati dal Cloud
+                // 1. CARICA I DATI DAL CLOUD
                 await loadDataFromCloud(); 
                 
                 document.getElementById('app-container').style.display = 'block';
                 loadApiariesAndArnie();
             } else {
                 const base = (new URL('.', location.href)).href;
-                // Torna alla pagina di login (index.html o login.html)
-                location.href = base + 'index.html'; 
+                location.href = base + 'index.html'; // Reindirizza al login
             }
         }
         
@@ -191,19 +199,24 @@
         }
         
         function loadApiariesAndArnie() {
-            // Qui dovresti avere gli elementi per l'interfaccia mostrata nello screenshot
+            
             const selector = document.getElementById('selettore-apiario');
             
+            // 1. Definisci il primo Apiario disponibile come fallback
             const firstApiary = Object.keys(arnieData)[0] || 'Apiario_A';
+            
+            // 2. Ottieni l'apiario corrente salvato o usa il primo disponibile
             const currentApiary = localStorage.getItem(CURRENT_APIARY_KEY) || firstApiary;
             
+            // 3. Assicurati che l'Apiario A esista se non ci sono dati
             if (!arnieData[firstApiary]) {
                  arnieData[firstApiary] = [];
             }
             localStorage.setItem(CURRENT_APIARY_KEY, currentApiary);
             
-            selector.innerHTML = ''; 
+            selector.innerHTML = ''; // Pulisci le opzioni
             
+            // Popola il selettore Apiario
             Object.keys(arnieData).forEach(apiarioId => {
                 const option = document.createElement('option');
                 option.value = apiarioId;
@@ -214,6 +227,7 @@
                 selector.appendChild(option);
             });
             
+            // Aggiungi opzione fittizia per gestione
             const optionManage = document.createElement('option');
             optionManage.value = 'Nuovo';
             optionManage.textContent = 'Gestisci / Aggiungi Apiario...';
@@ -223,7 +237,6 @@
         }
 
         function loadArnie() {
-            // Funzione per popolare la tabella delle arnie (identica alla versione precedente)
             const selector = document.getElementById('selettore-apiario');
             let selectedApiaryId = selector.value;
             const tbody = document.querySelector('#arnie-table tbody');
