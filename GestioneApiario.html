@@ -84,6 +84,7 @@
     </div>
 
     <script>
+        // VERSIONE: 5.1
         const AUTH_KEY = 'auth.user'; 
         const STORAGE_KEY = 'apisplanet.arnie';
         const CURRENT_APIARY_KEY = 'apisplanet.current_apiary';
@@ -100,8 +101,8 @@
         // --- FUNZIONI DI GESTIONE CLOUD GLOBALI (Necessitano di window.getCloudConfig) ---
 
         async function loadDataFromCloud() {
+            alert("2. loadDataFromCloud - Inizio Sincronizzazione Cloud.");
             document.getElementById('sync-status').textContent = 'Sincronizzazione in corso...';
-            // Usa window.getCloudConfig (definita in index.html) per prendere i dati hardcoded/configurati
             const config = window.getCloudConfig ? window.getCloudConfig() : {};
             
             // 1. Caricamento da Cloud
@@ -112,7 +113,6 @@
                     });
                     
                     if (!res.ok) {
-                        // Se fallisce (es. 401, 404), passa al fallback locale
                         throw new Error(`Accesso Gist fallito (Status: ${res.status}).`);
                     }
                     
@@ -123,11 +123,13 @@
                         arnieData = JSON.parse(file.content);
                         document.getElementById('sync-status').textContent = 'Dati caricati dal Cloud.';
                         localStorage.setItem(STORAGE_KEY, file.content); // Cache locale
+                        alert("3. loadDataFromCloud - Gist Trovato! Dati caricati con successo.");
                         return;
                     }
                 } catch (e) {
                     console.error("Errore Gist Cloud, fallback su locale:", e);
                     document.getElementById('sync-status').textContent = 'Errore Cloud. Dati caricati dalla cache.';
+                    alert("4. loadDataFromCloud - ERRORE Cloud o Gist Vuoto. Controllo la console per il codice di errore (401/404).");
                 }
             }
 
@@ -171,6 +173,7 @@
                 } catch (e) {
                     console.error("Errore salvataggio Gist:", e);
                     document.getElementById('sync-status').textContent = 'Salvataggio Cloud fallito! Dati salvati localmente.';
+                    alert("Salvataggio fallito! Controlla Token/ID Gist.");
                 }
             } else {
                 document.getElementById('sync-status').textContent = 'Dati salvati solo localmente (Cloud non configurato).';
@@ -180,6 +183,9 @@
         // --- FUNZIONI DI AUTENTICAZIONE E LOGICA PAGINA ---
         
         async function checkAuthentication() {
+            console.log("GestioneApiario.html V5.1 - checkAuthentication avviato.");
+            alert("1. GestioneApiario.html V5.1 - Autenticazione OK. Caricamento dati...");
+
             if (localStorage.getItem(AUTH_KEY) === 'api') {
                 // 1. CARICA I DATI DAL CLOUD
                 await loadDataFromCloud(); 
@@ -199,24 +205,19 @@
         }
         
         function loadApiariesAndArnie() {
-            
+            // ... (Logica per popolare la tabella) ...
             const selector = document.getElementById('selettore-apiario');
             
-            // 1. Definisci il primo Apiario disponibile come fallback
             const firstApiary = Object.keys(arnieData)[0] || 'Apiario_A';
-            
-            // 2. Ottieni l'apiario corrente salvato o usa il primo disponibile
             const currentApiary = localStorage.getItem(CURRENT_APIARY_KEY) || firstApiary;
             
-            // 3. Assicurati che l'Apiario A esista se non ci sono dati
             if (!arnieData[firstApiary]) {
                  arnieData[firstApiary] = [];
             }
             localStorage.setItem(CURRENT_APIARY_KEY, currentApiary);
             
-            selector.innerHTML = ''; // Pulisci le opzioni
+            selector.innerHTML = ''; 
             
-            // Popola il selettore Apiario
             Object.keys(arnieData).forEach(apiarioId => {
                 const option = document.createElement('option');
                 option.value = apiarioId;
@@ -227,7 +228,6 @@
                 selector.appendChild(option);
             });
             
-            // Aggiungi opzione fittizia per gestione
             const optionManage = document.createElement('option');
             optionManage.value = 'Nuovo';
             optionManage.textContent = 'Gestisci / Aggiungi Apiario...';
@@ -237,6 +237,7 @@
         }
 
         function loadArnie() {
+            // ... (Logica per visualizzare le arnie) ...
             const selector = document.getElementById('selettore-apiario');
             let selectedApiaryId = selector.value;
             const tbody = document.querySelector('#arnie-table tbody');
