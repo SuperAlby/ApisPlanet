@@ -162,7 +162,11 @@
       };
 
       if (existing === 'api') {
-        tryLoadConfigFile().finally(redirect);
+        tryLoadConfigFile().finally(()=>{
+          const base = (new URL('.', location.href)).href;
+          // Se già loggato, reindirizza direttamente alla pagina di gestione
+          location.href = base + 'GestioneApiario.html'; 
+        });
         return;
       }
       
